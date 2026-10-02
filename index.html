@@ -6,7 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="바나나 키우기">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fff7d6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>바나나 키우기</title>
 <style>
   :root{--bg:#fff7d6;--card:#fffdf2;--ink:#5a3a12;--yellow:#ffd84a;--green:#6cc04a;--pink:#ff9aa8;--blue:#6ab7ff;--orange:#ffb04a}
@@ -94,6 +98,12 @@
   .ci{width:16px;height:16px;vertical-align:-3px}
   .floaty svg{width:28px;height:28px;vertical-align:middle}
   .h2i{width:30px;height:30px;vertical-align:-5px}
+</style>
+<style>
+  #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
+  body{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+  input{-webkit-user-select:text;user-select:text}
+  button{touch-action:manipulation}
 </style>
 </head>
 <body>
@@ -456,6 +466,9 @@ document.addEventListener('visibilitychange', ()=>{
   else { const away=Math.min((Date.now()-S.last)/1000, 8*3600); tick(away,true); render(); }
 });
 window.addEventListener('pagehide', save);
+</script>
+<script>
+if('serviceWorker' in navigator){ addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }); }
 </script>
 </body>
 </html>
