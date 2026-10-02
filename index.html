@@ -57,6 +57,19 @@
   .fitem .e{font-size:34px;line-height:1.1}
   .fitem small{font-size:10.5px;font-weight:600;opacity:.75}
   .fclose{background:#f1e6b0}
+  #maxfx{position:fixed;inset:0;z-index:20;background:radial-gradient(circle at 50% 40%,#fff3a8,#ffd84a 60%,#ffb04a);display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+  #maxfx[hidden]{display:none}
+  .mxrays{position:absolute;width:150vmax;height:150vmax;left:50%;top:40%;margin:-75vmax 0 0 -75vmax;background:repeating-conic-gradient(rgba(255,255,255,.38) 0 10deg,transparent 10deg 20deg);animation:mxspin 24s linear infinite;z-index:1}
+  @keyframes mxspin{to{transform:rotate(360deg)}}
+  .mxcard{position:relative;z-index:2;text-align:center;display:grid;gap:10px;justify-items:center;color:#5a3a12;max-width:360px}
+  .mxcard img{width:230px;max-width:70vw;filter:saturate(1.35) brightness(1.06) drop-shadow(0 0 18px #fff3a0);animation:mxpop .9s cubic-bezier(.2,1.4,.4,1) both,idle 3s ease-in-out .9s infinite}
+  @keyframes mxpop{from{transform:scale(.2) rotate(-12deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+  .mxcard h2{margin:0;font-size:28px;line-height:1.2}
+  .mxcard p{margin:0;font-weight:700;font-size:15px}
+  .mxcard button{margin-top:6px;padding:12px 28px;background:#fffdf2}
+  .conf{position:absolute;top:-40px;font-size:24px;z-index:3;pointer-events:none;animation:mxfall linear infinite}
+  @keyframes mxfall{to{transform:translateY(115vh) rotate(540deg)}}
+  @media (prefers-reduced-motion:reduce){.mxrays{animation:none}.conf{display:none}.mxcard img{animation:none}}
 </style>
 </head>
 <body>
@@ -93,6 +106,7 @@
 </div>
 
 
+<div id="maxfx" hidden><div class="mxrays"></div><div class="mxcard" id="mxcard"></div></div>
 <div id="foods" hidden><div class="fbox"><p>무엇을 먹일까요?</p><div class="fgrid" id="fgrid"></div><button id="fclose" class="fclose">닫기</button></div></div>
 <div id="modal" hidden><div class="mbox"><p id="mtext"></p><input id="minput" maxlength="8" autocomplete="off"><div class="mbtns"><button id="mok">확인</button><button id="mcancel">취소</button></div></div></div>
 <script>
@@ -166,8 +180,8 @@ function render(){
   $('pet').style.setProperty('--s', scale);
   $('pet').style.transform = `scale(${scale})`;
   $('nm').textContent = S.name;
-  $('lv').textContent = `Lv.${S.level} ${stageName()}`;
-  $('expbar').style.width = (S.exp/need()*100)+'%';
+  $('lv').textContent = S.level >= MAX_LEVEL ? `Lv.${S.level} MAX ${stageName()}` : `Lv.${S.level} ${stageName()}`;
+  $('expbar').style.width = S.level >= MAX_LEVEL ? '100%' : (S.exp/need()*100)+'%';
   for(const k of ['hunger','mood','energy']){
     $('b-'+k).style.width = S[k]+'%';
     $('b-'+k).style.background = color(S[k]);
@@ -183,13 +197,37 @@ function float(emoji){
 }
 function bounce(){ const p=$('pet'); p.classList.remove('bounce'); void p.offsetWidth; p.classList.add('bounce'); }
 
+const MAX_LEVEL = 10;
 function gain(n){
+  if(S.level >= MAX_LEVEL) return;
   S.exp += n;
-  while(S.exp >= need()){
+  while(S.exp >= need() && S.level < MAX_LEVEL){
     S.exp -= need(); S.level++;
+    if(S.level >= MAX_LEVEL){ S.exp = 0; celebrateMax(); break; }
     setFace('surprised', 2200); bounce(); float('🎉'); float('✨');
     say(`레벨 ${S.level}! ${stageName()}(이)가 됐어요 🎉`, 4000);
   }
+}
+function celebrateMax(){
+  const fx=$('maxfx');
+  $('mxcard').innerHTML = `<img src="${IMGS.happy}" alt="" draggable="false">
+    <h2>🎉 만렙 달성! 🎉</h2>
+    <p>${S.name}(이)가 Lv.${MAX_LEVEL} 황금 바나나가 됐어요!</p>
+    <p>정성껏 키워 줘서 고마워요 💛</p>
+    <button id="mxok">계속 키우기</button>`;
+  fx.querySelectorAll('.conf').forEach(c=>c.remove());
+  const marks=['🎉','✨','⭐','🍌','💛','🎊'];
+  for(let i=0;i<46;i++){
+    const c=document.createElement('div'); c.className='conf'; c.textContent=marks[i%marks.length];
+    c.style.left=(Math.random()*96)+'%';
+    c.style.animationDuration=(2.6+Math.random()*2.6)+'s';
+    c.style.animationDelay=(-Math.random()*5)+'s';
+    c.style.fontSize=(18+Math.random()*16)+'px';
+    fx.appendChild(c);
+  }
+  fx.hidden=false;
+  $('mxok').onclick=()=>{ fx.hidden=true; fx.querySelectorAll('.conf').forEach(c=>c.remove()); setFace('happy',2500); bounce(); say('고마워요! 앞으로도 같이 놀아요 🍌',4000); save(); };
+  save();
 }
 function wake(msg){ S.sleeping=false; say(msg||'일어났어요!'); render(); }
 
@@ -291,6 +329,7 @@ async function askName(){
 /* ===== 시작 ===== */
 let isNew; try{ isNew = !localStorage.getItem(KEY); }catch(e){ isNew = true; }
 load();
+if(S.level > MAX_LEVEL){ S.level = MAX_LEVEL; S.exp = 0; }
 render(); save();
 if(isNew) askName().then(()=>{ render(); save(); });
 setInterval(()=>{ tick(1); render(); }, 1000);
