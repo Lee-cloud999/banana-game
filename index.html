@@ -47,6 +47,16 @@
   .mbox p{margin:0;font-weight:700;font-size:16px}
   .mbox input{font:inherit;font-size:16px;padding:10px 12px;border:2px solid #c9a94a;border-radius:12px;background:#fff;color:#5a3a12;text-align:center}
   .mbtns{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
+  .food{position:absolute;left:0;top:0;font-size:40px;line-height:1;pointer-events:none;z-index:4;will-change:transform}
+  #foods{position:fixed;inset:0;background:rgba(90,58,18,.4);display:flex;align-items:flex-end;justify-content:center;z-index:9}
+  #foods[hidden]{display:none}
+  .fbox{background:#fffdf2;border:3px solid #8a4b12;border-bottom:0;border-radius:22px 22px 0 0;width:100%;max-width:440px;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:12px;color:#5a3a12}
+  .fbox p{margin:0;text-align:center;font-weight:800;font-size:16px}
+  .fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .fitem{display:grid;gap:2px;justify-items:center;padding:10px 4px;font-size:13px}
+  .fitem .e{font-size:34px;line-height:1.1}
+  .fitem small{font-size:10.5px;font-weight:600;opacity:.75}
+  .fclose{background:#f1e6b0}
 </style>
 </head>
 <body>
@@ -83,6 +93,7 @@
 </div>
 
 
+<div id="foods" hidden><div class="fbox"><p>무엇을 먹일까요?</p><div class="fgrid" id="fgrid"></div><button id="fclose" class="fclose">닫기</button></div></div>
 <div id="modal" hidden><div class="mbox"><p id="mtext"></p><input id="minput" maxlength="8" autocomplete="off"><div class="mbtns"><button id="mok">확인</button><button id="mcancel">취소</button></div></div></div>
 <script>
 /* ===== 표정 이미지 (base64 내장) ===== */
@@ -183,14 +194,57 @@ function gain(n){
 function wake(msg){ S.sleeping=false; say(msg||'일어났어요!'); render(); }
 
 /* ===== 행동 ===== */
+let busy = false;
+const FOODS = [
+  {e:'🍌',n:'바나나',hunger:25,mood:4, exp:3,say:'냠냠! 바나나 맛있다 🍌'},
+  {e:'🍎',n:'사과',  hunger:20,mood:6, exp:3,say:'아삭아삭! 사과다 🍎'},
+  {e:'🍓',n:'딸기',  hunger:12,mood:10,exp:2,say:'새콤달콤 딸기 🍓'},
+  {e:'🍙',n:'주먹밥',hunger:40,mood:0, exp:4,say:'든든해요! 🍙'},
+  {e:'🍪',n:'쿠키',  hunger:10,mood:18,exp:2,say:'바삭바삭 쿠키 🍪'},
+  {e:'🍦',n:'아이스크림',hunger:8,mood:22,exp:2,say:'차가워! 달콤해! 🍦'}
+];
+const grid = $('fgrid');
+FOODS.forEach((f,i)=>{
+  const b=document.createElement('button'); b.className='fitem';
+  const parts=[]; if(f.hunger) parts.push('배고픔 +'+f.hunger); if(f.mood) parts.push('기분 +'+f.mood);
+  b.innerHTML=`<span class="e">${f.e}</span><span>${f.n}</span><small>${parts.join(' · ')}</small>`;
+  b.onclick=()=>{ $('foods').hidden=true; dropFood(f); };
+  grid.appendChild(b);
+});
+$('fclose').onclick = ()=>{ $('foods').hidden = true; };
+$('foods').onclick = e=>{ if(e.target===$('foods')) $('foods').hidden = true; };
+
+function dropFood(f){
+  busy = true;
+  const stR=$('stage').getBoundingClientRect(), pR=$('pet').getBoundingClientRect();
+  const mx = pR.left-stR.left + pR.width*0.4765;
+  const my = pR.top-stR.top + pR.height*0.619;
+  const el=document.createElement('div'); el.className='food'; el.textContent=f.e; el.style.left=mx+'px';
+  $('stage').appendChild(el);
+  const slow = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const dur = slow ? 1000 : 300;
+  setFace('surprised', dur+150);
+  const y = my-20;
+  const fall = el.animate([
+    {transform:'translate(-50%,-60px) rotate(-25deg) scale(1)',opacity:1},
+    {transform:`translate(-50%,${y}px) rotate(12deg) scale(1)`,opacity:1,offset:.8},
+    {transform:`translate(-50%,${y+4}px) rotate(0deg) scale(.1)`,opacity:0}
+  ],{duration:dur,easing:'cubic-bezier(.5,0,.9,.6)',fill:'forwards'});
+  fall.onfinish = ()=>{
+    el.remove();
+    S.hunger = clamp(S.hunger+f.hunger); S.mood = clamp(S.mood+f.mood); gain(f.exp);
+    setFace('eating',1800); bounce(); float(f.e); say(f.say);
+    busy = false; save();
+  };
+}
 $('feed').onclick = ()=>{
+  if(busy) return;
   if(S.sleeping) return say('쿨쿨... 자는 중이에요 💤');
   if(S.hunger >= 95){ setFace('surprised',1500); return say('배불러요! 더는 못 먹어요 😮'); }
-  S.hunger = clamp(S.hunger+25); S.mood = clamp(S.mood+4); gain(3);
-  setFace('eating',1800); bounce(); float('🍌'); say('냠냠! 맛있다 🍌');
-  save();
+  $('foods').hidden = false;
 };
 $('play').onclick = ()=>{
+  if(busy) return;
   if(S.sleeping) return say('쿨쿨... 자는 중이에요 💤');
   if(S.energy < 15){ setFace('sleepy',1800); return say('너무 졸려서 못 놀겠어요... 😪'); }
   if(S.hunger < 15){ setFace('sad',1800); return say('배고파서 힘이 없어요 😢'); }
@@ -199,11 +253,13 @@ $('play').onclick = ()=>{
   save();
 };
 $('sleep').onclick = ()=>{
+  if(busy) return;
   if(S.sleeping){ return wake('안녕! 잘 잤어요 ☀️'); }
   if(S.energy >= 95){ setFace('surprised',1500); return say('하나도 안 졸려요! 😮'); }
   S.sleeping = true; say('zZZ... 잘 자요 🌙'); render(); save();
 };
 $('pet').onclick = ()=>{
+  if(busy) return;
   if(S.sleeping) return wake('으앗! 깜짝이야 😮');
   S.mood = clamp(S.mood+3); gain(1);
   setFace('happy',1200); bounce(); float('💛');
