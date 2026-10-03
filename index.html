@@ -1450,7 +1450,7 @@ $('tttbtn').onclick = ()=>{
 $('tclose').onclick = ()=>{ $('tgames').hidden = true; };
 $('tgames').onclick = e=>{ if(e.target===$('tgames')) $('tgames').hidden = true; };
 /* ===== 꾸미기 위치 옮기기 · 크기 바꾸기 ===== */
-let editing = false, draft = {}, drag = null, selId = null, pinch = null;
+let editing = false, draft = {}, drag = null, selId = null;
 const ptrs = new Map();
 const S_MIN = 0.4, S_MAX = 3;
 function dget(it){ return (editing && draft[it.id]) || (S.pos && S.pos[it.id]) || {dx:0, dy:0, s:1}; }
@@ -1473,12 +1473,12 @@ function startEdit(){
   draft = {};
   its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0, s:(o&&o.s)||1}; });
   selId = (S.worn.hat && draft[S.worn.hat]) ? S.worn.hat : its[0].id;
-  editing = true; busy = true; ptrs.clear(); pinch = null; drag = null;
+  editing = true; busy = true; ptrs.clear(); drag = null;
   $('shop').hidden = true; $('editbar').hidden = false;
-  lastPetHTML = ''; render(); markSel(); say('끌어서 옮기고, 두 손가락으로 크기를 바꿔요', 6000);
+  lastPetHTML = ''; render(); markSel(); say('끌어서 옮기고, 크기는 작게·크게 버튼으로 바꿔요', 6000);
 }
 function endEdit(){
-  editing = false; busy = false; draft = {}; drag = null; pinch = null; ptrs.clear();
+  editing = false; busy = false; draft = {}; drag = null; ptrs.clear();
   $('editbar').hidden = true; lastPetHTML = ''; render();
 }
 $('posbtn').onclick = startEdit;
@@ -1497,44 +1497,32 @@ $('editreset').onclick = ()=>{
 };
 $('editsmall').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s/1.12); };
 $('editbig').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s*1.12); };
-function pdist(){ const p = [...ptrs.values()]; return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y) || 1; }
 $('pet').onpointerdown = e=>{
   if(!editing) return;
   ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  e.preventDefault();
+  if(ptrs.size > 1){ drag = null; return; }       // 손가락이 둘이면 아무것도 하지 않아요
   const el = e.target && e.target.closest ? e.target.closest('.dc') : null;
-  if(ptrs.size === 2){
-    if(selId && draft[selId]){ pinch = {id:selId, d0:pdist(), s0:draft[selId].s}; drag = null; }
-    e.preventDefault(); return;
-  }
   if(!el) return;
   selId = el.dataset.id; markSel();
   const pw = $('pet').querySelector('.pw'); if(!pw) return;
   const r = pw.getBoundingClientRect();
   drag = {id:selId, el, pid:e.pointerId, sx:e.clientX, sy:e.clientY, o:{...draft[selId]}, w:r.width||1, h:r.height||1};
   try{ el.setPointerCapture(e.pointerId); }catch(_){}
-  e.preventDefault();
 };
 $('pet').onpointermove = e=>{
-  if(!editing || !ptrs.has(e.pointerId)) return;
-  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
-  if(pinch && ptrs.size >= 2){ setScale(pinch.id, pinch.s0 * pdist() / pinch.d0); return; }
-  if(!drag || e.pointerId !== drag.pid) return;
+  if(!editing || !drag || e.pointerId !== drag.pid || ptrs.size > 1) return;
   const it = ITEM_BY_ID[drag.id];
   let dx = drag.o.dx + (e.clientX-drag.sx)/drag.w*100;
   let dy = drag.o.dy + (e.clientY-drag.sy)/drag.h*100;
   dx = Math.max(-10-it.x, Math.min(110-it.x, dx));
   dy = Math.max(-40-it.y, Math.min(110-it.y, dy));
-  draft[drag.id].dx = dx; draft[drag.id].dy = dy;
+  draft[drag.id].dx = dx; draft[drag.id].dy = dy;       // 크기(s)는 건드리지 않아요
   drag.el.style.left = (it.x+dx)+'%'; drag.el.style.top = (it.y+dy)+'%';
 };
 $('pet').onpointerup = $('pet').onpointercancel = e=>{
   ptrs.delete(e.pointerId);
-  if(ptrs.size < 2) pinch = null;
   if(drag && e.pointerId === drag.pid) drag = null;
-};
-$('pet').onwheel = e=>{
-  if(!editing || !selId || !draft[selId]) return;
-  e.preventDefault(); setScale(selId, draft[selId].s * (e.deltaY < 0 ? 1.08 : 1/1.08));
 };
 
 /* ==== /WALK-CHESS-JS ==== */
