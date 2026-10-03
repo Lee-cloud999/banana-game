@@ -217,6 +217,15 @@ button:disabled{opacity:.45;cursor:default;box-shadow:0 1px 0 #8a4b12;transform:
 .wfind img{width:100%;height:100%;object-fit:contain;display:block}
 .dc{user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 .pw img.dc{inset:auto;height:auto;object-fit:contain;pointer-events:none}
+
+/* ---- 위치 옮기기 ---- */
+.pw .dc.edit{pointer-events:auto;touch-action:none;cursor:grab;outline:2px dashed #ff8a00;outline-offset:3px;border-radius:6px}
+#editbar{position:fixed;left:0;right:0;bottom:0;z-index:9;background:#fffdf2;border-top:3px solid #8a4b12;border-radius:20px 20px 0 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:grid;gap:10px;max-width:440px;margin:0 auto}
+#editbar[hidden]{display:none}
+#editbar p{margin:0;text-align:center;font-weight:800;font-size:15px}
+.eb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.eb button{padding:10px 4px;font-size:14px}
+#editsave{background:#8fd86a}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -268,12 +277,13 @@ button:disabled{opacity:.45;cursor:default;box-shadow:0 1px 0 #8a4b12;transform:
 
 
 <div id="maxfx" hidden><div class="mxrays"></div><div class="mxcard" id="mxcard"></div></div>
-<div id="shop" hidden><div class="fbox"><p><svg class="bi" viewBox="0 0 64 40" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 20 Q4 -4 6 20 Q4 44 32 20 Z" fill="#ff7aa2"/><path d="M32 20 Q60 -4 58 20 Q60 44 32 20 Z" fill="#ff7aa2"/><circle cx="32" cy="20" r="6.5" fill="#ff5c8a"/></g></svg> 꾸미기 <span class="sc"><svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#f0a81d" stroke-width="2"/><path d="M12 8 L12 16" stroke="#f0a81d" stroke-width="2" fill="none"/></g></svg> <b id="shopcoins">0</b></span></p><div class="tabs" id="shoptabs"></div><div class="fgrid" id="shopgrid"></div><div id="shopmsg" class="smsg"></div><button id="shopclose" class="fclose">닫기</button></div></div>
+<div id="shop" hidden><div class="fbox"><p><svg class="bi" viewBox="0 0 64 40" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 20 Q4 -4 6 20 Q4 44 32 20 Z" fill="#ff7aa2"/><path d="M32 20 Q60 -4 58 20 Q60 44 32 20 Z" fill="#ff7aa2"/><circle cx="32" cy="20" r="6.5" fill="#ff5c8a"/></g></svg> 꾸미기 <span class="sc"><svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#f0a81d" stroke-width="2"/><path d="M12 8 L12 16" stroke="#f0a81d" stroke-width="2" fill="none"/></g></svg> <b id="shopcoins">0</b></span></p><div class="tabs" id="shoptabs"></div><div class="fgrid" id="shopgrid"></div><div id="shopmsg" class="smsg"></div><button id="posbtn" class="fclose">위치 옮기기</button><button id="shopclose" class="fclose">닫기</button></div></div>
 <div id="games" hidden><div class="fbox"><p>체스</p><div class="gcard"><div class="gt"><span id="gicon"></span> 난이도를 골라요</div><div class="gp">내가 흰색이고 먼저 시작해요. 이기면 코인을 많이 받고, 지거나 비겨도 조금 받아요.</div><div class="fgrid" id="glevels"></div><div class="gw" id="gwins"></div></div><button id="gclose" class="fclose">닫기</button></div></div>
 <div id="tgames" hidden><div class="fbox"><p>틱택토</p><div class="gcard"><div class="gt"><span id="ticon"></span> 난이도를 골라요</div><div class="gp">내가 동그라미, 바나나가 가위표예요. 세 개를 한 줄로 이으면 이겨요. 지거나 비겨도 조금 받아요.</div><div class="fgrid" id="tlevels"></div><div class="gw" id="twins"></div></div><button id="tclose" class="fclose">닫기</button></div></div>
 <div id="chess" hidden><div class="fxfull" id="chfx"></div><div class="chwrap"><div class="chhead"><img id="chface" alt="" draggable="false"><div><div class="t" id="chtitle">체스</div><div class="chs" id="chstatus">내 차례예요</div></div><button id="chsnd" class="sndb" aria-label="소리"></button></div><div class="chbwrap"><div class="capr" id="chcapTop"></div><div style="position:relative"><div id="chboard"></div><div class="fxl" id="chfxb"></div><div class="toast" id="chtoast"></div></div><div class="capr" id="chcapBot"></div></div><div class="chbtns"><button id="chundo">무르기</button><button id="chmain">기권</button><button id="chexit">나가기</button></div><p class="chhint">말을 누르면 갈 수 있는 곳이 표시돼요. 킹은 잡는 게 아니라, 도망갈 곳이 없게 공격(체크메이트)하면 이겨요.</p></div></div>
 <div id="ttt" hidden><div class="fxfull" id="tfx"></div><div class="chwrap"><div class="chhead"><img id="tface" alt="" draggable="false"><div><div class="t" id="ttitle">틱택토</div><div class="chs" id="tstatus">내 차례예요</div></div><button id="tsnd" class="sndb" aria-label="소리"></button></div><div class="tbwrap"><div id="tboard"></div></div><div class="chbtns" style="grid-template-columns:repeat(2,1fr)"><button id="tmain">다시 하기</button><button id="texit">나가기</button></div></div></div>
 <div id="foods" hidden><div class="fbox"><p>무엇을 먹일까요?</p><div class="fgrid" id="fgrid"></div><button id="fclose" class="fclose">닫기</button></div></div>
+<div id="editbar" hidden><p>모자·목걸이를 끌어서 옮겨요</p><div class="eb"><button id="editreset">처음 위치</button><button id="editcancel">취소</button><button id="editsave">저장</button></div></div>
 <div id="modal" hidden><div class="mbox"><p id="mtext"></p><input id="minput" maxlength="8" autocomplete="off"><div class="mbtns"><button id="mok">확인</button><button id="mcancel">취소</button></div></div></div>
 <script>
 /* ===== 표정 이미지 (base64 내장) ===== */
@@ -472,7 +482,7 @@ $('sleep').onclick = ()=>{
   if(S.energy >= 95){ setFace('surprised',1500); return say('하나도 안 졸려요! 😮'); }
   S.sleeping = true; say('zZZ... 잘 자요 🌙'); render(); save();
 };
-$('pet').onclick = ()=>{
+$('pet').onclick = ()=>{ if(editing) return;
   if(busy) return;
   if(S.sleeping) return wake('으앗! 깜짝이야 😮');
   S.mood = clamp(S.mood+3); gain(1);
@@ -551,6 +561,7 @@ function ensureShop(){
   if(!S.chess || typeof S.chess !== 'object') S.chess = {};
   if(!S.ttt || typeof S.ttt !== 'object') S.ttt = {};
   if(S.snd === undefined) S.snd = true;
+  if(!S.pos || typeof S.pos !== 'object') S.pos = {};
   const REFUND = {face_sun:50, face_glass:40, face_gog:60};
   S.owned = S.owned.filter(id=>{ if(REFUND[id]){ S.coins += REFUND[id]; return false; } return true; });
   if(S.worn) delete S.worn.face;
@@ -560,8 +571,8 @@ function decorHTML(){
     const it = S.worn && ITEM_BY_ID[S.worn[slot]];
     if(!it) return '';
     const d = ICONS[it.id];
-    if(d.img) return `<img class="dc" src="${d.img}" alt="" draggable="false" style="left:${it.x}%;top:${it.y}%;width:${it.w}%;transform:translate(-50%,-50%) rotate(${it.r}deg)">`;
-    return `<svg class="dc" viewBox="${d.vb}" aria-hidden="true" style="left:${it.x}%;top:${it.y}%;width:${it.w}%;transform:translate(-50%,-50%) rotate(${it.r}deg)"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
+    if(d.img) return `<img class="dc${editing?' edit':''}" data-id="${it.id}" src="${d.img}" alt="" draggable="false" style="${dpos(it)};width:${it.w}%;transform:translate(-50%,-50%) rotate(${it.r}deg)">`;
+    return `<svg class="dc${editing?' edit':''}" data-id="${it.id}" viewBox="${d.vb}" aria-hidden="true" style="${dpos(it)};width:${it.w}%;transform:translate(-50%,-50%) rotate(${it.r}deg)"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
   }).join('');
 }
 function addCoins(n){ S.coins = (S.coins||0) + n; float('+'+n+' '+icon('coin'),true); }
@@ -1432,6 +1443,61 @@ $('tttbtn').onclick = ()=>{
 };
 $('tclose').onclick = ()=>{ $('tgames').hidden = true; };
 $('tgames').onclick = e=>{ if(e.target===$('tgames')) $('tgames').hidden = true; };
+/* ===== 꾸미기 위치 옮기기 ===== */
+let editing = false, draft = {}, drag = null;
+function dpos(it){
+  const o = (editing && draft[it.id]) || (S.pos && S.pos[it.id]) || {dx:0, dy:0};
+  return `left:${it.x + o.dx}%;top:${it.y + o.dy}%`;
+}
+function startEdit(){
+  if(busy) return;
+  const its = ['neck','hat'].map(s=>ITEM_BY_ID[S.worn[s]]).filter(Boolean);
+  if(!its.length){ shopMsg('먼저 모자나 목 아이템을 착용해 주세요'); return; }
+  draft = {};
+  its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0}; });
+  editing = true; busy = true;
+  $('shop').hidden = true; $('editbar').hidden = false;
+  lastPetHTML = ''; render(); say('끌어서 옮겨 보세요', 4000);
+}
+function endEdit(){
+  editing = false; busy = false; draft = {}; drag = null;
+  $('editbar').hidden = true; lastPetHTML = ''; render();
+}
+$('posbtn').onclick = startEdit;
+$('editsave').onclick = ()=>{
+  if(!S.pos) S.pos = {};
+  for(const id in draft){
+    const dx = Math.round(draft[id].dx*10)/10, dy = Math.round(draft[id].dy*10)/10;
+    if(dx===0 && dy===0) delete S.pos[id]; else S.pos[id] = {dx, dy};
+  }
+  save(); endEdit(); setFace('happy',1500); say('위치를 저장했어요', 2500);
+};
+$('editcancel').onclick = ()=>{ endEdit(); say('저장하지 않았어요', 2000); };
+$('editreset').onclick = ()=>{
+  for(const id in draft) draft[id] = {dx:0, dy:0};
+  lastPetHTML = ''; render();
+};
+$('pet').onpointerdown = e=>{
+  if(!editing) return;
+  const el = e.target && e.target.closest ? e.target.closest('.dc') : null;
+  if(!el) return;
+  const pw = $('pet').querySelector('.pw'); if(!pw) return;
+  const r = pw.getBoundingClientRect();
+  drag = {id:el.dataset.id, el, sx:e.clientX, sy:e.clientY, o:{...draft[el.dataset.id]}, w:r.width||1, h:r.height||1};
+  try{ el.setPointerCapture(e.pointerId); }catch(_){}
+  e.preventDefault();
+};
+$('pet').onpointermove = e=>{
+  if(!drag) return;
+  const it = ITEM_BY_ID[drag.id];
+  let dx = drag.o.dx + (e.clientX-drag.sx)/drag.w*100;
+  let dy = drag.o.dy + (e.clientY-drag.sy)/drag.h*100;
+  dx = Math.max(-10-it.x, Math.min(110-it.x, dx));
+  dy = Math.max(-40-it.y, Math.min(110-it.y, dy));
+  draft[drag.id] = {dx, dy};
+  drag.el.style.left = (it.x+dx)+'%'; drag.el.style.top = (it.y+dy)+'%';
+};
+$('pet').onpointerup = $('pet').onpointercancel = ()=>{ drag = null; };
 
 /* ==== /WALK-CHESS-JS ==== */
 
