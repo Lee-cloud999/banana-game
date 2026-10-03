@@ -226,6 +226,8 @@ button:disabled{opacity:.45;cursor:default;box-shadow:0 1px 0 #8a4b12;transform:
 .eb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .eb button{padding:10px 4px;font-size:14px}
 #editsave{background:#8fd86a}
+.eb2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.eb2 button{padding:8px 4px;font-size:14px;background:#d7e6ff}
+.pw .dc.edit.sel{outline-style:solid;outline-color:#2f9a3a}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -283,7 +285,7 @@ button:disabled{opacity:.45;cursor:default;box-shadow:0 1px 0 #8a4b12;transform:
 <div id="chess" hidden><div class="fxfull" id="chfx"></div><div class="chwrap"><div class="chhead"><img id="chface" alt="" draggable="false"><div><div class="t" id="chtitle">체스</div><div class="chs" id="chstatus">내 차례예요</div></div><button id="chsnd" class="sndb" aria-label="소리"></button></div><div class="chbwrap"><div class="capr" id="chcapTop"></div><div style="position:relative"><div id="chboard"></div><div class="fxl" id="chfxb"></div><div class="toast" id="chtoast"></div></div><div class="capr" id="chcapBot"></div></div><div class="chbtns"><button id="chundo">무르기</button><button id="chmain">기권</button><button id="chexit">나가기</button></div><p class="chhint">말을 누르면 갈 수 있는 곳이 표시돼요. 킹은 잡는 게 아니라, 도망갈 곳이 없게 공격(체크메이트)하면 이겨요.</p></div></div>
 <div id="ttt" hidden><div class="fxfull" id="tfx"></div><div class="chwrap"><div class="chhead"><img id="tface" alt="" draggable="false"><div><div class="t" id="ttitle">틱택토</div><div class="chs" id="tstatus">내 차례예요</div></div><button id="tsnd" class="sndb" aria-label="소리"></button></div><div class="tbwrap"><div id="tboard"></div></div><div class="chbtns" style="grid-template-columns:repeat(2,1fr)"><button id="tmain">다시 하기</button><button id="texit">나가기</button></div></div></div>
 <div id="foods" hidden><div class="fbox"><p>무엇을 먹일까요?</p><div class="fgrid" id="fgrid"></div><button id="fclose" class="fclose">닫기</button></div></div>
-<div id="editbar" hidden><p>모자·목걸이를 끌어서 옮겨요</p><div class="eb"><button id="editreset">처음 위치</button><button id="editcancel">취소</button><button id="editsave">저장</button></div></div>
+<div id="editbar" hidden><p>끌어서 옮기고, 두 손가락으로 크기를 바꿔요</p><div class="eb2"><button id="editsmall">작게</button><button id="editbig">크게</button></div><div class="eb"><button id="editreset">처음 위치</button><button id="editcancel">취소</button><button id="editsave">저장</button></div></div>
 <div id="modal" hidden><div class="mbox"><p id="mtext"></p><input id="minput" maxlength="8" autocomplete="off"><div class="mbtns"><button id="mok">확인</button><button id="mcancel">취소</button></div></div></div>
 <script>
 /* ===== 표정 이미지 (base64 내장) ===== */
@@ -571,8 +573,8 @@ function decorHTML(){
     const it = S.worn && ITEM_BY_ID[S.worn[slot]];
     if(!it) return '';
     const d = ICONS[it.id];
-    if(d.img) return `<img class="dc${editing?' edit':''}" data-id="${it.id}" src="${d.img}" alt="" draggable="false" style="${dpos(it)};width:${it.w}%;transform:translate(-50%,-50%) rotate(${it.r}deg)">`;
-    return `<svg class="dc${editing?' edit':''}" data-id="${it.id}" viewBox="${d.vb}" aria-hidden="true" style="${dpos(it)};width:${it.w}%;transform:translate(-50%,-50%) rotate(${it.r}deg)"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
+    if(d.img) return `<img class="dc${editing?' edit':''}" data-id="${it.id}" src="${d.img}" alt="" draggable="false" style="${dpos(it)};width:${dw(it)}%;transform:translate(-50%,-50%) rotate(${it.r}deg)">`;
+    return `<svg class="dc${editing?' edit':''}" data-id="${it.id}" viewBox="${d.vb}" aria-hidden="true" style="${dpos(it)};width:${dw(it)}%;transform:translate(-50%,-50%) rotate(${it.r}deg)"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
   }).join('');
 }
 function addCoins(n){ S.coins = (S.coins||0) + n; float('+'+n+' '+icon('coin'),true); }
@@ -1443,61 +1445,93 @@ $('tttbtn').onclick = ()=>{
 };
 $('tclose').onclick = ()=>{ $('tgames').hidden = true; };
 $('tgames').onclick = e=>{ if(e.target===$('tgames')) $('tgames').hidden = true; };
-/* ===== 꾸미기 위치 옮기기 ===== */
-let editing = false, draft = {}, drag = null;
-function dpos(it){
-  const o = (editing && draft[it.id]) || (S.pos && S.pos[it.id]) || {dx:0, dy:0};
-  return `left:${it.x + o.dx}%;top:${it.y + o.dy}%`;
+/* ===== 꾸미기 위치 옮기기 · 크기 바꾸기 ===== */
+let editing = false, draft = {}, drag = null, selId = null, pinch = null;
+const ptrs = new Map();
+const S_MIN = 0.4, S_MAX = 3;
+function dget(it){ return (editing && draft[it.id]) || (S.pos && S.pos[it.id]) || {dx:0, dy:0, s:1}; }
+function dpos(it){ const o = dget(it); return `left:${it.x + o.dx}%;top:${it.y + o.dy}%`; }
+function dw(it){ const o = dget(it); return Math.round(it.w * (o.s || 1) * 100) / 100; }
+function markSel(){
+  $('pet').querySelectorAll('.dc').forEach(e=>e.classList.toggle('sel', e.dataset.id === selId));
+}
+function setScale(id, s){
+  const it = ITEM_BY_ID[id]; if(!it || !draft[id]) return;
+  s = Math.max(S_MIN, Math.min(S_MAX, s));
+  draft[id].s = s;
+  const el = $('pet').querySelector(`.dc[data-id="${id}"]`);
+  if(el) el.style.width = dw(it) + '%';
 }
 function startEdit(){
   if(busy) return;
   const its = ['neck','hat'].map(s=>ITEM_BY_ID[S.worn[s]]).filter(Boolean);
   if(!its.length){ shopMsg('먼저 모자나 목 아이템을 착용해 주세요'); return; }
   draft = {};
-  its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0}; });
-  editing = true; busy = true;
+  its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0, s:(o&&o.s)||1}; });
+  selId = (S.worn.hat && draft[S.worn.hat]) ? S.worn.hat : its[0].id;
+  editing = true; busy = true; ptrs.clear(); pinch = null; drag = null;
   $('shop').hidden = true; $('editbar').hidden = false;
-  lastPetHTML = ''; render(); say('끌어서 옮겨 보세요', 4000);
+  lastPetHTML = ''; render(); markSel(); say('끌어서 옮기고, 두 손가락으로 크기를 바꿔요', 4500);
 }
 function endEdit(){
-  editing = false; busy = false; draft = {}; drag = null;
+  editing = false; busy = false; draft = {}; drag = null; pinch = null; ptrs.clear();
   $('editbar').hidden = true; lastPetHTML = ''; render();
 }
 $('posbtn').onclick = startEdit;
 $('editsave').onclick = ()=>{
   if(!S.pos) S.pos = {};
   for(const id in draft){
-    const dx = Math.round(draft[id].dx*10)/10, dy = Math.round(draft[id].dy*10)/10;
-    if(dx===0 && dy===0) delete S.pos[id]; else S.pos[id] = {dx, dy};
+    const dx = Math.round(draft[id].dx*10)/10, dy = Math.round(draft[id].dy*10)/10, s = Math.round(draft[id].s*100)/100;
+    if(dx===0 && dy===0 && s===1) delete S.pos[id]; else S.pos[id] = {dx, dy, s};
   }
-  save(); endEdit(); setFace('happy',1500); say('위치를 저장했어요', 2500);
+  save(); endEdit(); setFace('happy',1500); say('저장했어요', 2500);
 };
 $('editcancel').onclick = ()=>{ endEdit(); say('저장하지 않았어요', 2000); };
 $('editreset').onclick = ()=>{
-  for(const id in draft) draft[id] = {dx:0, dy:0};
-  lastPetHTML = ''; render();
+  for(const id in draft) draft[id] = {dx:0, dy:0, s:1};
+  lastPetHTML = ''; render(); markSel();
 };
+$('editsmall').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s/1.12); };
+$('editbig').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s*1.12); };
+function pdist(){ const p = [...ptrs.values()]; return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y) || 1; }
 $('pet').onpointerdown = e=>{
   if(!editing) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
   const el = e.target && e.target.closest ? e.target.closest('.dc') : null;
+  if(ptrs.size === 2){
+    if(selId && draft[selId]){ pinch = {id:selId, d0:pdist(), s0:draft[selId].s}; drag = null; }
+    e.preventDefault(); return;
+  }
   if(!el) return;
+  selId = el.dataset.id; markSel();
   const pw = $('pet').querySelector('.pw'); if(!pw) return;
   const r = pw.getBoundingClientRect();
-  drag = {id:el.dataset.id, el, sx:e.clientX, sy:e.clientY, o:{...draft[el.dataset.id]}, w:r.width||1, h:r.height||1};
+  drag = {id:selId, el, pid:e.pointerId, sx:e.clientX, sy:e.clientY, o:{...draft[selId]}, w:r.width||1, h:r.height||1};
   try{ el.setPointerCapture(e.pointerId); }catch(_){}
   e.preventDefault();
 };
 $('pet').onpointermove = e=>{
-  if(!drag) return;
+  if(!editing || !ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(pinch && ptrs.size >= 2){ setScale(pinch.id, pinch.s0 * pdist() / pinch.d0); return; }
+  if(!drag || e.pointerId !== drag.pid) return;
   const it = ITEM_BY_ID[drag.id];
   let dx = drag.o.dx + (e.clientX-drag.sx)/drag.w*100;
   let dy = drag.o.dy + (e.clientY-drag.sy)/drag.h*100;
   dx = Math.max(-10-it.x, Math.min(110-it.x, dx));
   dy = Math.max(-40-it.y, Math.min(110-it.y, dy));
-  draft[drag.id] = {dx, dy};
+  draft[drag.id].dx = dx; draft[drag.id].dy = dy;
   drag.el.style.left = (it.x+dx)+'%'; drag.el.style.top = (it.y+dy)+'%';
 };
-$('pet').onpointerup = $('pet').onpointercancel = ()=>{ drag = null; };
+$('pet').onpointerup = $('pet').onpointercancel = e=>{
+  ptrs.delete(e.pointerId);
+  if(ptrs.size < 2) pinch = null;
+  if(drag && e.pointerId === drag.pid) drag = null;
+};
+$('pet').onwheel = e=>{
+  if(!editing || !selId || !draft[selId]) return;
+  e.preventDefault(); setScale(selId, draft[selId].s * (e.deltaY < 0 ? 1.08 : 1/1.08));
+};
 
 /* ==== /WALK-CHESS-JS ==== */
 
