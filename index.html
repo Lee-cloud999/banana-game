@@ -197,8 +197,8 @@ button:disabled{opacity:.45;cursor:default;box-shadow:0 1px 0 #8a4b12;transform:
 
 <div id="maxfx" hidden><div class="mxrays"></div><div class="mxcard" id="mxcard"></div></div>
 <div id="shop" hidden><div class="fbox"><p><svg class="bi" viewBox="0 0 64 40" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 20 Q4 -4 6 20 Q4 44 32 20 Z" fill="#ff7aa2"/><path d="M32 20 Q60 -4 58 20 Q60 44 32 20 Z" fill="#ff7aa2"/><circle cx="32" cy="20" r="6.5" fill="#ff5c8a"/></g></svg> 꾸미기 <span class="sc"><svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#f0a81d" stroke-width="2"/><path d="M12 8 L12 16" stroke="#f0a81d" stroke-width="2" fill="none"/></g></svg> <b id="shopcoins">0</b></span></p><div class="tabs" id="shoptabs"></div><div class="fgrid" id="shopgrid"></div><div id="shopmsg" class="smsg"></div><button id="shopclose" class="fclose">닫기</button></div></div>
-<div id="games" hidden><div class="fbox"><p>미니게임</p><div class="gcard"><div class="gt"><span id="gicon"></span> 체스</div><div class="gp">바나나와 체스로 대결해요. 내가 흰색이고 먼저 시작해요. 이기면 코인과 경험치를 받아요. 난이도를 골라 주세요.</div><div class="fgrid" id="glevels"></div><div class="gw" id="gwins"></div></div><button id="gclose" class="fclose">닫기</button></div></div>
-<div id="chess" hidden><div class="chwrap"><div class="chhead"><img id="chface" alt="" draggable="false"><div><div class="t" id="chtitle">체스</div><div class="chs" id="chstatus">내 차례예요</div></div></div><div id="chboard"></div><div class="chbtns"><button id="chundo">무르기</button><button id="chmain">기권</button><button id="chexit">나가기</button></div><p class="chhint">말을 누르면 갈 수 있는 곳이 표시돼요. 폰이 끝까지 가면 퀸이 돼요.</p></div></div>
+<div id="games" hidden><div class="fbox"><p>미니게임</p><div class="gcard"><div class="gt"><span id="gicon"></span> 체스</div><div class="gp">바나나와 체스로 대결해요. 내가 흰색이고 먼저 시작해요. 이기면 코인과 경험치를 많이 받고, 지거나 비겨도 조금 받아요. 난이도를 골라 주세요.</div><div class="fgrid" id="glevels"></div><div class="gw" id="gwins"></div></div><button id="gclose" class="fclose">닫기</button></div></div>
+<div id="chess" hidden><div class="chwrap"><div class="chhead"><img id="chface" alt="" draggable="false"><div><div class="t" id="chtitle">체스</div><div class="chs" id="chstatus">내 차례예요</div></div></div><div id="chboard"></div><div class="chbtns"><button id="chundo">무르기</button><button id="chmain">기권</button><button id="chexit">나가기</button></div><p class="chhint">말을 누르면 갈 수 있는 곳이 표시돼요. 상대 킹은 잡는 게 아니라, 도망갈 곳이 없게 공격(체크메이트)하면 이겨요. 폰이 끝까지 가면 퀸이 돼요.</p></div></div>
 <div id="foods" hidden><div class="fbox"><p>무엇을 먹일까요?</p><div class="fgrid" id="fgrid"></div><button id="fclose" class="fclose">닫기</button></div></div>
 <div id="modal" hidden><div class="mbox"><p id="mtext"></p><input id="minput" maxlength="8" autocomplete="off"><div class="mbtns"><button id="mok">확인</button><button id="mcancel">취소</button></div></div></div>
 <script>
@@ -858,9 +858,9 @@ $('walkbtn').onclick = startWalk;
 
 /* ===== 미니게임 · 체스 ===== */
 const CH_LEVELS = {
-  easy:  {name:'쉬움',   face:'happy',  coin:20,  exp:4},
-  normal:{name:'보통',   face:'normal', coin:50,  exp:8},
-  hard:  {name:'어려움', face:'angry',  coin:100, exp:15}
+  easy:  {name:'쉬움',   face:'happy',  coin:20,  exp:4,  drawCoin:8,  drawExp:2, loseCoin:5,  loseExp:1},
+  normal:{name:'보통',   face:'normal', coin:50,  exp:8,  drawCoin:20, drawExp:4, loseCoin:10, loseExp:2},
+  hard:  {name:'어려움', face:'angry',  coin:100, exp:15, drawCoin:40, drawExp:7, loseCoin:20, loseExp:3}
 };
 const CHCOL = {
   1: {pf:'#fffaf0', pd:'#d2b57c', pe:'#3a230c'},
@@ -879,7 +879,7 @@ function renderGames(){
   Object.keys(CH_LEVELS).forEach(k=>{
     const L = CH_LEVELS[k];
     const b = document.createElement('button'); b.className = 'fitem';
-    b.innerHTML = `<img class="lvimg" src="${IMGS[L.face]}" alt="" draggable="false"><span>${L.name}</span><small>코인 ${L.coin} · 경험치 ${L.exp}</small>`;
+    b.innerHTML = `<img class="lvimg" src="${IMGS[L.face]}" alt="" draggable="false"><span>${L.name}</span><small>이기면 코인 ${L.coin}</small><small>져도 코인 ${L.loseCoin}</small>`;
     b.onclick = ()=>chStart(k);
     g.appendChild(b);
   });
@@ -931,7 +931,7 @@ function chRender(anim){
 function chStatus(){
   if(cOver) return;
   let t;
-  if(cThink) t = '바나나가 생각 중이에요...';
+  if(cThink) t = CH.inCheck(cs,-1) ? '체크! 바나나가 피하는 중이에요...' : '바나나가 생각 중이에요...';
   else if(cs.turn===1) t = CH.inCheck(cs,1) ? '체크! 왕을 지켜 주세요' : '내 차례예요';
   else t = '바나나 차례예요';
   $('chstatus').textContent = t;
@@ -956,7 +956,7 @@ function chCell(i){
 function chEnd(){
   const lm = CH.legal(cs);
   if(!lm.length) return CH.inCheck(cs,cs.turn) ? {win:-cs.turn} : {draw:'둘 수 있는 수가 없어서 무승부예요'};
-  if(CH.insufficient(cs)) return {draw:'말이 모자라서 무승부예요'};
+  if(CH.insufficient(cs)) return {draw:'남은 말로는 체크메이트를 만들 수 없어서 무승부예요. 킹은 잡는 게 아니라 체크메이트로 이겨요'};
   if(cs.half>=100) return {draw:'50수 규칙으로 무승부예요'};
   if(cRep[posKey(cs)]>=3) return {draw:'같은 장면이 세 번 반복되어 무승부예요'};
   return null;
@@ -989,23 +989,33 @@ function chAi(){
 }
 async function chFinish(end){
   cOver = true; cThink = false; cSel = -1; cMoves = [];
-  const L = CH_LEVELS[cLevel]; let title, msg;
+  const L = CH_LEVELS[cLevel]; let title, msg, coin = 0, exp = 0;
+  if(!S.chess) S.chess = {easy:0,normal:0,hard:0};
   if(end.win===1){
-    if(!S.chess) S.chess = {easy:0,normal:0,hard:0};
     S.chess[cLevel] = (S.chess[cLevel]||0) + 1;
-    addCoins(L.coin); gain(L.exp); save(); render();
+    coin = L.coin; exp = L.exp;
     chFace('sad');
     title = '이겼어요!';
-    msg = `체크메이트! 이겼어요. 코인 ${L.coin}개와 경험치 ${L.exp}를 받았어요.`;
+    msg = `체크메이트! 이겼어요. 코인 ${coin}개와 경험치 ${exp}를 받았어요.`;
   } else if(end.win===-1){
     chFace('happy');
-    title = '졌어요';
-    msg = end.resign ? '기권했어요. 다음엔 꼭 이겨 봐요.' : '체크메이트! 바나나가 이겼어요. 다시 도전해 봐요.';
+    if(end.resign){
+      title = '졌어요';
+      msg = '기권했어요. 기권하면 보상이 없어요. 다음엔 끝까지 해 봐요.';
+    } else {
+      coin = L.loseCoin; exp = L.loseExp;
+      title = '졌어요';
+      msg = `체크메이트! 바나나가 이겼어요. 끝까지 해 줘서 코인 ${coin}개와 경험치 ${exp}를 받았어요.`;
+    }
   } else {
     chFace('normal');
+    coin = L.drawCoin; exp = L.drawExp;
     title = '무승부';
-    msg = end.draw + '. 다음 판에 도전해 봐요.';
+    msg = `${end.draw}. 코인 ${coin}개와 경험치 ${exp}를 받았어요.`;
   }
+  if(coin>0){ addCoins(coin); }
+  if(exp>0){ gain(exp); }
+  save(); render();
   $('chstatus').textContent = title;
   chRender(); chBtns();
   await dialog(msg);
