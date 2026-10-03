@@ -232,6 +232,9 @@ button:disabled{opacity:.45;cursor:default;box-shadow:0 1px 0 #8a4b12;transform:
 #editsmall,#editbig{background:#d7e6ff}
 #editsave{background:#8fd86a}
 #posbtn{padding:9px;font-size:14px;background:#d7e6ff}
+body.editing #stage{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+body.editing #bubble{pointer-events:none}
+body.editing #pet{cursor:grab}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -1473,12 +1476,12 @@ function startEdit(){
   draft = {};
   its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0, s:(o&&o.s)||1}; });
   selId = (S.worn.hat && draft[S.worn.hat]) ? S.worn.hat : its[0].id;
-  editing = true; busy = true; ptrs.clear(); drag = null;
+  editing = true; busy = true; document.body.classList.add('editing'); ptrs.clear(); drag = null;
   $('shop').hidden = true; $('editbar').hidden = false;
   lastPetHTML = ''; render(); markSel(); say('끌어서 옮기고, 크기는 작게·크게 버튼으로 바꿔요', 6000);
 }
 function endEdit(){
-  editing = false; busy = false; draft = {}; drag = null; ptrs.clear();
+  editing = false; busy = false; document.body.classList.remove('editing'); draft = {}; drag = null; ptrs.clear();
   $('editbar').hidden = true; lastPetHTML = ''; render();
 }
 $('posbtn').onclick = startEdit;
@@ -1497,20 +1500,20 @@ $('editreset').onclick = ()=>{
 };
 $('editsmall').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s/1.12); };
 $('editbig').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s*1.12); };
-$('pet').onpointerdown = e=>{
+$('stage').onpointerdown = e=>{
   if(!editing) return;
   ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
   e.preventDefault();
   if(ptrs.size > 1){ drag = null; return; }       // 손가락이 둘이면 아무것도 하지 않아요
   const el = e.target && e.target.closest ? e.target.closest('.dc') : null;
-  if(!el) return;
-  selId = el.dataset.id; markSel();
+  if(el){ selId = el.dataset.id; markSel(); }       // 아이템을 누르면 그 아이템을 고르고
+  if(!selId || !draft[selId]) return;               // 아니면 고른 아이템을 어디서든 끌 수 있어요
   const pw = $('pet').querySelector('.pw'); if(!pw) return;
   const r = pw.getBoundingClientRect();
-  drag = {id:selId, el, pid:e.pointerId, sx:e.clientX, sy:e.clientY, o:{...draft[selId]}, w:r.width||1, h:r.height||1};
-  try{ el.setPointerCapture(e.pointerId); }catch(_){}
+  drag = {id:selId, pid:e.pointerId, sx:e.clientX, sy:e.clientY, o:{...draft[selId]}, w:r.width||1, h:r.height||1};
+  try{ $('stage').setPointerCapture(e.pointerId); }catch(_){}
 };
-$('pet').onpointermove = e=>{
+$('stage').onpointermove = e=>{
   if(!editing || !drag || e.pointerId !== drag.pid || ptrs.size > 1) return;
   const it = ITEM_BY_ID[drag.id];
   let dx = drag.o.dx + (e.clientX-drag.sx)/drag.w*100;
@@ -1518,9 +1521,10 @@ $('pet').onpointermove = e=>{
   dx = Math.max(-10-it.x, Math.min(110-it.x, dx));
   dy = Math.max(-40-it.y, Math.min(110-it.y, dy));
   draft[drag.id].dx = dx; draft[drag.id].dy = dy;       // 크기(s)는 건드리지 않아요
-  drag.el.style.left = (it.x+dx)+'%'; drag.el.style.top = (it.y+dy)+'%';
+  const el = $('pet').querySelector(`.dc[data-id="${drag.id}"]`);
+  if(el){ el.style.left = (it.x+dx)+'%'; el.style.top = (it.y+dy)+'%'; }
 };
-$('pet').onpointerup = $('pet').onpointercancel = e=>{
+$('stage').onpointerup = $('stage').onpointercancel = e=>{
   ptrs.delete(e.pointerId);
   if(drag && e.pointerId === drag.pid) drag = null;
 };
