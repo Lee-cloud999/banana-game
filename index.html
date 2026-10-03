@@ -419,6 +419,23 @@ footer a{cursor:pointer}
 #phscreen .ph{aspect-ratio:4/3;width:62%;margin:0 auto}.phalbum .ph{width:100%}
 .hc{position:relative}.hc>div{flex:1}.hload{flex:none;padding:8px 10px;font-size:13px;background:#8fd86a}
 html,body{overscroll-behavior-y:contain}
+#walk.paused .wl{animation-play-state:paused}
+.wkos{position:absolute;right:7%;bottom:12%;height:48%;width:auto;pointer-events:none;z-index:3}
+#meet{position:fixed;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));max-width:440px;margin:0 auto;z-index:9;background:#fffaf0;border:3px solid #8a4b12;border-radius:20px;padding:10px 12px 12px;display:grid;gap:8px;box-shadow:0 5px 0 #8a4b12,0 -2px 14px #0003;animation:phup .2s ease-out}
+#meet[hidden]{display:none}
+.mhead{display:flex;align-items:center;gap:8px;font-size:15px}
+.mhead img{width:40px;height:40px;object-fit:contain}
+.mtext{font-size:15px;font-weight:700;line-height:1.45;min-height:44px}
+.mbtns{display:grid;gap:6px}
+.mbtns button{padding:10px;font-size:14px;background:#ffe9a8}
+.mbtns .mnext{background:#8fd86a}
+.wkos{right:2%;height:42%}
+.phcallbox{grid-template-columns:78px 1fr;gap:4px 8px;align-items:center;text-align:left}
+.phcallbox img{width:78px;height:64px;grid-column:1;grid-row:1}
+.phcallbox b{grid-column:1;grid-row:2;text-align:center;font-size:13px}
+.phsay{grid-column:2;grid-row:1/3;font-size:13px;padding:8px 10px}
+.phcallbox .phrow{grid-column:1/3}
+.phdev{max-height:42vh}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -1175,6 +1192,7 @@ function startWalk(){
   const slot = (WALK_MS - 4000) / n;
   for(let i=0;i<n;i++) walkTimers.push(setTimeout(spawnFind, 800 + slot*i + Math.random()*slot*0.6));
   walkTimers.push(setTimeout(endWalk, WALK_MS));
+  if(typeof walkMeet === 'function' && Math.random() < .6) walkTimers.push(setTimeout(walkMeet, 4200 + Math.random()*2200));
 }
 function endWalk(){
   walkTimers.forEach(clearTimeout); walkTimers = [];
@@ -2047,21 +2065,54 @@ function phOpen(){
 }
 function phClose(){ clearInterval(phClockT); phClockT = null; phCall = null; $('phone').hidden = true; updPhoneDot(); }
 const PH_TALK = {
-  normal:['안녕 바나나야! 잘 지냈어?','오늘 뭐 했어? 나는 물놀이 했어!','같이 놀고 싶다~ 놀러 와!','바나나 목소리 들으니까 좋아!'],
-  sad:['요즘 좀 심심했어... 전화해 줘서 고마워','비가 와서 시무룩했는데 기운 났어!']
+  normal:[
+    '안녕 바나나야! 잘 지냈어?','오늘 뭐 했어? 나는 물놀이 했어! 코로 물을 뿌리면 엄청 시원해!','같이 놀고 싶다~ 놀러 와!','바나나 목소리 들으니까 좋아!',
+    '있잖아, 나 어제 꿈에서 바나나랑 같이 구름 위를 걸었어. 폭신폭신했어!','요즘 땅콩이 너무 맛있어. 바나나는 요즘 뭐가 제일 맛있어?',
+    '나 오늘 새 노래를 지었어! 뿌우뿌우~ 뿌뿌우~ 어때, 괜찮지?','코끼리는 기억력이 좋대. 그래서 나는 바나나랑 놀았던 거 다 기억해!',
+    '비 오는 날엔 웅덩이에서 첨벙첨벙하는 게 최고야. 바나나도 해 봤어?','나 달리기 연습하고 있어. 다음에 같이 달리기 시합하자!',
+    '오늘 하늘이 엄청 파래. 바나나 있는 곳은 어때?','방금 나비가 코 위에 앉았다 갔어! 간지러워서 웃음이 나왔어.',
+    '친구가 있다는 건 정말 좋은 일이야. 바나나가 내 친구라서 기뻐!','나 오늘 잠깐 낮잠 잤는데 바나나 꿈 꿨다? 비밀이야~',
+    '바나나야, 우리 다음에 소풍 가자! 내가 도시락 싸 갈게.','아까 거울을 봤는데 내 귀가 더 커진 것 같아! 기분 탓인가?'
+  ],
+  sad:['요즘 좀 심심했어... 전화해 줘서 고마워','비가 와서 시무룩했는데 기운 났어!','오늘 혼자 있었더니 조금 쓸쓸했어. 바나나 목소리 들으니까 괜찮아졌어.','사실 아까 넘어져서 무릎이 아팠어… 근데 지금은 괜찮아!'],
+  sleepy:['하암… 벌써 밤이네. 졸리지만 바나나랑 얘기하고 싶어서 안 잤어!','쉿, 작게 말할게. 다들 자고 있어… 바나나도 곧 자야 해!','별이 엄청 많이 떴어. 자기 전에 바나나한테 인사하고 싶었어. 잘 자~'],
+  care:['바나나 오늘 기운이 없는 것 같아. 밥은 먹었어? 맛있는 거 먹고 힘내!','목소리가 조금 지쳐 보여. 푹 쉬어야 해. 내가 옆에서 응원할게!'],
+  hungry:['어, 배에서 꼬르륵 소리 난다! 요리하기 해서 맛있는 거 만들어 먹어!'],
+  big:['바나나 이제 정말 많이 컸다! 처음 만났을 때가 엊그제 같은데!','와, 레벨이 엄청 높아졌네. 바나나는 내 자랑이야!'],
+  photo:['핸드폰으로 찍은 사진 앨범에 많이 모았어? 나도 구경하고 싶다!','바나나 사진 한 장만 문자로 보내 주면 안 돼? 히히, 농담이야~'],
+  cook:['요리 연습한다며? 나도 먹어 보고 싶다! 별 세 개짜리 요리 만들면 알려 줘.','나는 요리 못하는데… 코로 재료 섞으면 엉망이 돼. 바나나가 부러워!'],
+  farm:['농장에서 뭐 키우고 있어? 나는 당근이 궁금해! 당근도 있으면 좋겠다.','채소가 자라는 걸 기다리는 시간도 두근두근하지 않아?']
 };
+let phLast = '';
+function phLine(){
+  const h = new Date().getHours(), pool = [];
+  const add = (arr, w)=>{ for(let i=0;i<w;i++) pool.push(...arr.map(t=>[arr===PH_TALK.sad||arr===PH_TALK.care?'sad':arr===PH_TALK.sleepy?'sleep':'normal', t])); };
+  add(PH_TALK.normal, 2);
+  if(Math.random() < .25) add(PH_TALK.sad, 1);
+  if(h >= 22 || h < 5) add(PH_TALK.sleepy, 4);
+  if(S.mood < 35 || S.energy < 25) add(PH_TALK.care, 4);
+  if(S.hunger < 35) add(PH_TALK.hungry, 4);
+  if(S.level >= 12) add(PH_TALK.big, 2);
+  if((S.photos||[]).length) add(PH_TALK.photo, 2);
+  if((S.dishes||[]).length || Object.keys(S.recipes||{}).length) add(PH_TALK.cook, 2);
+  if(S.farm) add(PH_TALK.farm, 2);
+  let pick, n = 0;
+  do { pick = pool[Math.floor(Math.random()*pool.length)]; n++; } while(pick[1] === phLast && n < 12);
+  phLast = pick[1]; return {face: pick[0], text: pick[1]};
+}
 function phDial(){
   const p = phState(), td = todayStr();
   if(p.callDay !== td){ p.callDay = td; p.calls = 0; }
   const first = p.calls < 3;
-  const sad = Math.random() < .3;
-  phCall = {face: sad?'sad':'normal', text: pickOf(sad?PH_TALK.sad:PH_TALK.normal)};
+  phCall = Object.assign(phLine(), {n:1});
+  phCall.text = '여보세요? 바나나야? ' + phCall.text;
   if(first){ p.calls++; S.mood = clamp(S.mood+8); gain(2); }
   sfx('select'); save(); render(); phRender();
 }
 function phMore(){
-  const sad = Math.random() < .3;
-  phCall = {face: sad?'sad':'normal', text: pickOf(sad?PH_TALK.sad:PH_TALK.normal)};
+  const n = (phCall && phCall.n || 1) + 1;
+  phCall = Object.assign(phLine(), {n});
+  if(n % 4 === 0){ S.mood = clamp(S.mood+2); gain(1); save(); render(); }
   sfx('select'); phRender();
 }
 $('phbtn').innerHTML = icon('ui_phone','bi') + ' 핸드폰<small>사진·전화·문자</small>';
@@ -2360,6 +2411,103 @@ $('fmbody').onclick = e=>{
   addEventListener('touchend', end, {passive:true});
   addEventListener('touchcancel', end, {passive:true});
 })();
+/* ===== 산책 중 코순이 만나기 · 대화 ===== */
+const MEET_GREET = [
+  {q:'어! 바나나야, 안녕! 여기서 만나다니 신기하다!', c:[
+    {t:'안녕, 코순아! 반가워!', r:'나도 반가워! 오늘은 기분이 엄청 좋아 보여!', m:4},
+    {t:'어디 가는 길이야?', r:'그냥 산책하는 중이야. 바나나 만나서 더 좋다!', m:3},
+    {t:'(손을 흔든다)', r:'히히, 손 흔들어 주는 거 귀여워!', m:5}]},
+  {q:'뿌우~ 바나나다! 나 지금 심심했는데!', c:[
+    {t:'그럼 같이 걷자!', r:'좋아좋아! 같이 걸으면 두 배로 재밌어!', m:5},
+    {t:'나도 심심했어!', r:'우리 마음이 통했네! 역시 친구야.', m:4},
+    {t:'뭐 하고 놀까?', r:'음… 이야기하면서 걸을까? 나 할 말 많아!', m:3}]},
+  {q:'바나나야! 나 아까부터 너 찾고 있었어!', c:[
+    {t:'정말? 왜 찾았어?', r:'그냥 보고 싶었어! 이유가 꼭 있어야 해?', m:5},
+    {t:'미안, 오래 기다렸어?', r:'아니야, 금방 만났잖아! 괜찮아.', m:3},
+    {t:'찾았다, 코순이!', r:'히히, 들켰다! 숨바꼭질 아니었는데!', m:4}]}
+];
+const MEET_TOPIC = [
+  {q:'바나나는 제일 좋아하는 음식이 뭐야? 나는 땅콩!', c:[
+    {t:'나는 딸기가 좋아!', r:'딸기도 맛있겠다! 다음에 나도 나눠 줘~', m:4},
+    {t:'나는 꿀 바른 바나나!', r:'꿀 바나나라니, 상상만 해도 달콤해!', m:5},
+    {t:'땅콩도 좋아해!', r:'진짜? 그럼 우리 취향 똑같네! 신난다!', m:6}]},
+  {q:'어젯밤에 별똥별 봤어! 소원도 빌었다?', c:[
+    {t:'무슨 소원 빌었어?', r:'비밀이야~ 말하면 안 이뤄진대! 근데 너랑 관련 있어.', m:6},
+    {t:'우와, 나도 보고 싶었는데!', r:'다음에 같이 보자! 약속!', m:5},
+    {t:'나도 소원 빌어야지!', r:'좋아! 별이 들어줄 거야, 분명히!', m:4}]},
+  {q:'오늘 구름이 솜사탕 같지 않아? 먹어 보고 싶다!', c:[
+    {t:'진짜 맛있어 보인다!', r:'그치? 한 입만 베어 물고 싶어!', m:4},
+    {t:'구름은 먹을 수 없어~', r:'알아, 그래도 상상은 자유잖아! 히히.', m:3},
+    {t:'우리 구름 위에 눕는 상상하자', r:'폭신폭신~ 생각만 해도 졸려!', m:5}]},
+  {q:'바나나야, 나 오늘 새로운 걸 배웠어! 알려 줄까?', c:[
+    {t:'응, 알려 줘!', r:'코는 길수록 멋있대! …아닌가? 내가 지어낸 건가?', m:5},
+    {t:'뭔데뭔데?', r:'길가의 꽃은 밟지 않고 지나가는 거! 꽃도 친구야.', m:5},
+    {t:'나도 알려 줄게!', r:'우와, 서로 알려 주면 둘 다 똑똑해지겠다!', m:4}]},
+  {q:'요즘 핸드폰으로 사진 찍는 거 재밌더라. 바나나도 찍어 봤어?', c:[
+    {t:'응, 앨범에 가득해!', r:'나중에 보여 줘! 나도 내 사진 보내 줄게.', m:5},
+    {t:'아직 못 찍어 봤어', r:'그럼 오늘 돌아가서 한 장 찍어 봐! 예쁘게 나올 거야.', m:3},
+    {t:'코순이를 찍고 싶어!', r:'어머, 포즈 잡을게! 이렇게…? 찰칵!', m:6}]}
+];
+const MEET_BYE = [
+  {q:'벌써 시간이 이렇게 됐네. 이제 가야 할 것 같아…', c:[
+    {t:'또 만나자, 코순아!', r:'응! 꼭 또 만나자. 안녕~', m:5, coin:6},
+    {t:'아쉽다… 잘 가!', r:'나도 아쉬워. 대신 이거 줄게! 힘내!', m:4, coin:8},
+    {t:'전화할게!', r:'좋아! 핸드폰 기다리고 있을게~', m:6, coin:5}]},
+  {q:'오늘 너랑 얘기해서 너무 즐거웠어! 다음에 또 보자!', c:[
+    {t:'나도 즐거웠어!', r:'헤헤, 그럼 선물! 땅콩… 은 내가 먹을래. 코인 줄게!', m:5, coin:7},
+    {t:'조심히 가!', r:'응, 너도 조심히 돌아가! 바이바이~', m:4, coin:5},
+    {t:'다음엔 더 오래 놀자!', r:'좋아! 약속의 코인이야~', m:6, coin:9}]}
+];
+let meetBox = null, meetImg = null;
+function meetEl(){
+  if(meetBox) return meetBox;
+  meetBox = document.createElement('div'); meetBox.id = 'meet'; meetBox.hidden = true;
+  document.body.appendChild(meetBox);
+  meetBox.onclick = e=>{ const b = e.target.closest && e.target.closest('[data-c]'); if(b) meetPick(+b.dataset.c); };
+  return meetBox;
+}
+let meetStep = 0, meetSeq = [], meetCur = null, meetReply = null;
+function meetShow(){
+  const box = meetEl(); box.hidden = false;
+  const line = meetReply ? meetReply : meetCur.q;
+  const btns = meetReply ? `<button class="mnext" data-c="-1">${meetStep >= meetSeq.length ? '헤어지기' : '계속 얘기하기'}</button>`
+    : meetCur.c.map((c,i)=>`<button data-c="${i}">${c.t}</button>`).join('');
+  box.innerHTML = `<div class="mhead"><img src="${KIMG.normal}" alt="" draggable="false"><b>코순이</b></div><div class="mtext">${line}</div><div class="mbtns">${btns}</div>`;
+}
+function meetPick(i){
+  if(i === -1){
+    if(meetStep >= meetSeq.length) return meetEnd();
+    meetReply = null; meetCur = meetSeq[meetStep++]; sfx('select'); return meetShow();
+  }
+  const c = meetCur.c[i];
+  S.mood = clamp(S.mood + c.m); gain(1);
+  if(c.coin){ addCoins(c.coin); walkCoins += c.coin; }
+  meetReply = c.r + (c.coin ? ` (코인 +${c.coin})` : ''); sfx('promote'); setFace('happy', 1500); bounce();
+  save(); render(); meetShow();
+}
+function walkMeet(){
+  if(!walking) return;
+  walkTimers.forEach(clearTimeout); walkTimers = [];
+  $('stage').querySelectorAll('.wfind').forEach(e=>e.remove());
+  const bar = $('walkbar'); const w = getComputedStyle(bar).width, pw = bar.parentNode.clientWidth || 1;
+  bar.style.transition = 'none'; bar.style.width = (parseFloat(w)/pw*100)+'%';
+  $('walk').classList.add('paused');
+  meetImg = document.createElement('img'); meetImg.className = 'wkos'; meetImg.src = KIMG.normal; meetImg.draggable = false;
+  $('stage').appendChild(meetImg);
+  meetImg.animate([{transform:'translateX(160px)',opacity:0},{transform:'translateX(0)',opacity:1}], {duration:900, easing:'ease-out', fill:'forwards'});
+  setFace('surprised', 900); say('어? 저기 코순이다!', 1800); sfx('select');
+  const pick = a=>a[Math.floor(Math.random()*a.length)];
+  meetSeq = [pick(MEET_TOPIC), pick(MEET_BYE)]; meetStep = 0; meetReply = null; meetCur = pick(MEET_GREET);
+  setTimeout(meetShow, 1000);
+}
+function meetEnd(){
+  meetEl().hidden = true;
+  if(meetImg){ const im = meetImg; meetImg = null; const a = im.animate([{opacity:1,transform:'translateX(0)'},{opacity:0,transform:'translateX(160px)'}], {duration:700, fill:'forwards'}); a.onfinish = ()=>im.remove(); }
+  $('walk').classList.remove('paused');
+  const bar = $('walkbar'); void bar.offsetWidth; bar.style.transition = 'width 1500ms linear'; bar.style.width = '100%';
+  say('코순이 안녕~ 산책을 마저 해요!', 1600);
+  walkTimers.push(setTimeout(endWalk, 1600));
+}
 
 /* ==== /WALK-CHESS-JS ==== */
 
