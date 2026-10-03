@@ -397,6 +397,10 @@ footer a{cursor:pointer}
 .fmplot .plus{position:absolute;left:50%;top:50%;transform:translate(-50%,-62%);margin:0}
 .fmplot .tm{left:50%;right:auto;transform:translateX(-50%);width:100%;margin:0}
 #fmbody{display:grid;gap:10px;width:100%}#fmbody .ckgo{width:100%}
+.fmplot .tm{line-height:1.25;bottom:6px;font-size:12px}
+.fmplot .pl{box-sizing:border-box;padding:14px 0 30px}.fmplot .pl svg{height:100%;width:auto}
+.fmplot .pl{padding:10px 0 50px}.fmplot .tm{bottom:5px;font-size:11.5px}.fmplot .pl svg{transform:scale(1.5)}
+.fmplot .pl svg{transform:scale(1.2)}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -2235,9 +2239,9 @@ function fmRender(){
   const plots = S.farm.plots.map((p,k)=>{
     if(!p) return `<button class="fmplot" data-k="${k}"><span class="pl">${icon('soil')}</span><span class="plus">+</span></button>`;
     const tot = FM_SEC[p.i]*1000, el = now - p.t, ready = el >= tot;
-    if(ready) return `<button class="fmplot ready" data-k="${k}"><span class="pl">${icon(ING[p.i].id)}</span><span class="tm">수확!</span></button>`;
+    if(ready) return `<button class="fmplot ready" data-k="${k}"><span class="pl">${icon(ING[p.i].id)}</span><span class="tm">${ING[p.i].n} 다 컸어요!<br>눌러서 수확</span></button>`;
     const f = el/tot;
-    return `<button class="fmplot" data-k="${k}"><span class="pg"><i style="width:${Math.round(f*100)}%"></i></span><span class="pl">${icon(f>.5?'bud':'sprout')}</span><span class="tm">${Math.ceil((tot-el)/1000)}초</span></button>`;
+    return `<button class="fmplot" data-k="${k}"><span class="pg"><i style="width:${Math.round(f*100)}%"></i></span><span class="pl">${icon(f>.5?'bud':'sprout')}</span><span class="tm">${ING[p.i].n} 자라는 중<br>${Math.ceil((tot-el)/1000)}초 남음</span></button>`;
   }).join('');
   const seeds = ING.map((g,i)=>`<button class="fmseed${fmSeed===i?' on':''}" data-s="${i}"><span class="e">${icon(g.id)}</span>${g.n}<small>${FM_SEC[i]}초</small></button>`).join('');
   const inv = ING.map((g,i)=>fmHave(i) ? `<span>${icon(g.id)}${fmHave(i)}</span>` : '').join('') || '<span>없어요</span>';
