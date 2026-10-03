@@ -2489,7 +2489,7 @@ function walkMeet(){
   if(!walking) return;
   walkTimers.forEach(clearTimeout); walkTimers = [];
   $('stage').querySelectorAll('.wfind').forEach(e=>e.remove());
-  const bar = $('walkbar'); const w = getComputedStyle(bar).width, pw = bar.parentNode.clientWidth || 1;
+  const bar = $('walkbar'); const w = typeof getComputedStyle === 'function' ? getComputedStyle(bar).width : '0', pw = (bar.parentNode && bar.parentNode.clientWidth) || 1;
   bar.style.transition = 'none'; bar.style.width = (parseFloat(w)/pw*100)+'%';
   $('walk').classList.add('paused');
   meetImg = document.createElement('img'); meetImg.className = 'wkos'; meetImg.src = KIMG.normal; meetImg.draggable = false;
