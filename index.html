@@ -418,6 +418,7 @@ footer a{cursor:pointer}
 .phbar{min-height:26px;padding-bottom:4px}
 #phscreen .ph{aspect-ratio:4/3;width:62%;margin:0 auto}.phalbum .ph{width:100%}
 .hc{position:relative}.hc>div{flex:1}.hload{flex:none;padding:8px 10px;font-size:13px;background:#8fd86a}
+html,body{overscroll-behavior-y:contain}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -2320,6 +2321,45 @@ $('fmbody').onclick = e=>{
     if(n){ sfx('win'); gain(n); save(); fmRender(); $('fmt').textContent = `재료 ${n}개 수확!`; setTimeout(()=>{ $('fmt').textContent=''; }, 1600); }
   }
 };
+/* ===== 맨 위에서 아래로 당겨 새로고침 ===== */
+(function(){
+  if(typeof addEventListener !== 'function' || typeof document === 'undefined' || !document.body) return;
+  const TH = 90;
+  let y0 = 0, active = false, dist = 0, bar = null;
+  const BLOCK = '#pet,#stage,#chess,#ttt,#kt,#hall,#phone,#cook,#farm,#games,#tgames,#editbar,#modal,#shop,#walk,input,textarea';
+  function mk(){
+    if(bar) return bar;
+    bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:50%;transform:translate(-50%,-60px);z-index:20;background:#fff8d8;border:2px solid #8a4b12;border-radius:99px;padding:6px 16px;font:800 13px sans-serif;color:#5a3a12;box-shadow:0 3px 0 #8a4b12;pointer-events:none;transition:transform .15s';
+    document.body.appendChild(bar); return bar;
+  }
+  function overlayOpen(){
+    return ['chess','ttt','kt','hall','phone','cook','farm','games','tgames','modal','shop'].some(id=>{ const e = document.getElementById(id); return e && !e.hidden && getComputedStyle(e).display !== 'none' && getComputedStyle(e).position === 'fixed'; });
+  }
+  addEventListener('touchstart', e=>{
+    active = false;
+    if(e.touches.length !== 1 || document.body.classList.contains('editing')) return;
+    if((window.scrollY||document.documentElement.scrollTop||0) > 0) return;
+    if(e.target.closest && e.target.closest(BLOCK)) return;
+    if(overlayOpen()) return;
+    y0 = e.touches[0].clientY; active = true; dist = 0;
+  }, {passive:true});
+  addEventListener('touchmove', e=>{
+    if(!active) return;
+    dist = e.touches[0].clientY - y0;
+    if(dist <= 0){ if(bar) bar.style.transform = 'translate(-50%,-60px)'; return; }
+    const b = mk(); b.textContent = dist >= TH ? '놓으면 새로고침' : '아래로 당겨서 새로고침';
+    b.style.transform = `translate(-50%,${Math.min(dist*.5, 60) + 10}px)`;
+  }, {passive:true});
+  function end(){
+    if(!active) return; active = false;
+    if(dist >= TH){ try{ save(); }catch(_){} if(bar) bar.textContent = '새로고침 중...'; location.reload(); }
+    else if(bar) bar.style.transform = 'translate(-50%,-60px)';
+    dist = 0;
+  }
+  addEventListener('touchend', end, {passive:true});
+  addEventListener('touchcancel', end, {passive:true});
+})();
 
 /* ==== /WALK-CHESS-JS ==== */
 
