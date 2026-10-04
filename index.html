@@ -525,6 +525,10 @@ html,body{overscroll-behavior-y:contain}
 .sinfo #sumsg{color:#c2410c}
 .stabs button:not(.on){background:#fff4c2}
 #bchip{background:#fffdf2;border:2px solid #8a4b12;border-radius:999px;padding:3px 10px;font-weight:700;font-size:14px}
+#notice ul{min-height:170px;margin-bottom:10px;font-size:14px;gap:8px}
+#notice .npg{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;font-weight:800;font-size:14px}
+#notice .npg button{width:42px;height:34px;padding:0;font-size:22px;line-height:1;border-radius:12px;background:#fff4c2}
+#notice .npg button:disabled{opacity:.35}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -2980,16 +2984,23 @@ function foodGridUpd(){
 /* ===== 업데이트 공지 (게임을 켤 때 최신 공지 하나만 팝업) ===== */
 // 새 업데이트가 있으면 id를 새 값으로 바꾸고 내용을 고쳐 주세요. id가 바뀌면 "오늘 하루 보지 않기"를 눌렀어도 다시 떠요.
 const NOTICE = {
-  id: '2026-10-04-2',
+  id: '2026-10-04-3',
   title: '10월 4일 업데이트',
+  // 한 창에 5개씩 보여요. 줄 수가 많으면 아래 화살표로 넘겨요.
   lines: [
-    '마당에 슈퍼가 생겼어요! 유료 먹이와 요리 재료를 살 수 있어요',
-    '산책이 점프 게임으로! 화면을 톡 눌러 장애물을 피하고 코인과 재료를 모아요',
-    '허기짐이 초록색이 되면 "배부름"으로 바뀌어요',
-    '꾸미기 미리보기, 각도 조절(5도), 뽑기 아이템 15종 추가',
-    '체스와 틱택토 보상이 늘었고, 도감에 착용 사진이 떠요'
+    '마당에 슈퍼가 생겼어요 (먹이·재료 구매)',
+    '산책이 점프 게임으로 바뀌었어요',
+    '허기짐이 초록색이면 "배부름"으로 표시돼요',
+    '꾸미기 미리보기와 각도 조절(5도)이 생겼어요',
+    '체스·틱택토 보상 증가, 도감에 착용 사진',
+    '유료 먹이 5종과 바나나재화 표시가 생겼어요',
+    '뽑기 아이템 15종이 추가됐어요',
+    '농장에서 재료를 키워 요리할 수 있어요',
+    '핸드폰으로 현재 화면을 찍을 수 있어요',
+    '방에 들어가기와 학교 가기가 있어요'
   ]
 };
+const NOTICE_PER = 5;
 const NOTICE_KEY = 'banana-notice-hide';
 function noticeHidden(){ try{ return localStorage.getItem(NOTICE_KEY) === NOTICE.id; }catch(e){ return false; } }
 function noticeHide(){ try{ localStorage.setItem(NOTICE_KEY, NOTICE.id); }catch(e){} }
@@ -2998,12 +3009,20 @@ function showNotice(tries){
   const md = $('modal');
   if(md && !md.hidden && (tries||0) < 60) return setTimeout(()=>showNotice((tries||0)+1), 1000);   // 이름 입력 등이 끝난 뒤에
   const box = document.createElement('div'); box.id = 'notice';
-  const li = NOTICE.lines.map(t=>`<li>${t}</li>`).join('');
-  box.innerHTML = `<div class="nbox"><h2>${NOTICE.title}</h2><ul>${li}</ul><div class="nbtns"><button data-n="hide">오늘 하루 보지 않기</button><button data-n="close" class="nclose">닫기</button></div></div>`;
+  const pages = Math.max(1, Math.ceil(NOTICE.lines.length / NOTICE_PER)); let pg = 0;
+  const draw = ()=>{
+    const li = NOTICE.lines.slice(pg*NOTICE_PER, pg*NOTICE_PER + NOTICE_PER).map(t=>`<li>${t}</li>`).join('');
+    const nav = pages > 1 ? `<div class="npg"><button data-n="prev" ${pg===0?'disabled':''} aria-label="이전">‹</button><span>${pg+1} / ${pages}</span><button data-n="next" ${pg>=pages-1?'disabled':''} aria-label="다음">›</button></div>` : '';
+    box.innerHTML = `<div class="nbox"><h2>${NOTICE.title}</h2><ul>${li}</ul>${nav}<div class="nbtns"><button data-n="hide">오늘 하루 보지 않기</button><button data-n="close" class="nclose">닫기</button></div></div>`;
+  };
+  draw();
   box.onclick = e=>{
     const b = e.target && e.target.closest ? e.target.closest('[data-n]') : null;
     if(!b && e.target !== box) return;
-    if(b && b.dataset.n === 'hide') noticeHide();
+    const n = b && b.dataset.n;
+    if(n === 'prev'){ if(pg > 0){ pg--; draw(); } return; }
+    if(n === 'next'){ if(pg < pages-1){ pg++; draw(); } return; }
+    if(n === 'hide') noticeHide();
     box.remove();
   };
   document.body.appendChild(box);
