@@ -524,6 +524,7 @@ html,body{overscroll-behavior-y:contain}
 .sinfo{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:14px;min-height:20px}
 .sinfo #sumsg{color:#c2410c}
 .stabs button:not(.on){background:#fff4c2}
+#bchip{background:#fffdf2;border:2px solid #8a4b12;border-radius:999px;padding:3px 10px;font-weight:700;font-size:14px}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -538,7 +539,7 @@ html,body{overscroll-behavior-y:contain}
 <div id="app">
   <header>
     <h1><svg class="bi" viewBox="0 0 64 64" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M16 12 Q8 44 38 56 Q54 60 60 49 Q42 48 31 33 Q25 23 24 10 Z" fill="#ffd84a"/><path d="M16 12 L24 10 L23 5 L17 6 Z" fill="#6b3a12"/><circle cx="58" cy="50" r="3.3" fill="#6b3a12"/><path d="M20 20 Q20 36 36 49" fill="none" stroke="#fff1a0" stroke-width="3"/></g></svg> <span id="nm">바나나</span> 키우기</h1>
-    <div class="hr"><div id="coinchip"><svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#f0a81d" stroke-width="2"/><path d="M12 8 L12 16" stroke="#f0a81d" stroke-width="2" fill="none"/></g></svg> <span id="coins">0</span></div><div id="lv">Lv.1 아기 바나나</div></div>
+    <div class="hr"><div id="coinchip"><svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke-width="2"/><circle cx="12" cy="12" r="6" fill="none" stroke="#f0a81d" stroke-width="2"/><path d="M12 8 L12 16" stroke="#f0a81d" stroke-width="2" fill="none"/></g></svg> <span id="coins">0</span></div><div id="bchip" title="바나나재화"><svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><g stroke="#8a4b12" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M6.5 3 Q1 15 12.5 21.5 Q19 24 23 18.5 Q14.5 18.5 11 12.5 Q8.5 8 10.5 2.5 Z" fill="#ffd84a"/><circle cx="22" cy="19" r="1.4" fill="#6b3a12" stroke="none"/></g></svg> <span id="bcoins">0</span></div><div id="lv">Lv.1 아기 바나나</div></div>
   </header>
   <div class="exp"><i id="expbar"></i></div>
 
@@ -679,7 +680,7 @@ function render(){
   $('pet').style.setProperty('--s', scale);
   $('pet').style.transform = `scale(${scale})`;
   $('nm').textContent = S.name;
-  $('coins').textContent = S.coins;
+  $('coins').textContent = S.coins; $('bcoins').textContent = (S.bananas||0).toLocaleString('ko-KR');
   $('stage').style.background = (BGS[S.inRoom ? 'bg_room' : S.worn.bg]||BGS.bg_day).css; if(typeof roomUpd === 'function') roomUpd(); if(typeof superUpd === 'function') superUpd();
   $('lv').textContent = S.level >= MAX_LEVEL ? `Lv.${S.level} MAX ${stageName()}` : `Lv.${S.level} ${stageName()}`;
   $('expbar').style.width = S.level >= MAX_LEVEL ? '100%' : (S.exp/need()*100)+'%';
@@ -2009,7 +2010,7 @@ async function graduate(){
   if(S.level < MAX_LEVEL) return;
   if(!Array.isArray(S.hall)) S.hall = [];
   S.hall.push({name:S.name, level:S.level, born:S.born||Date.now(), done:Date.now(), pets:S.pets||0, hat:S.worn&&S.worn.hat, acc:S.worn&&S.worn.acc, prop:S.worn&&S.worn.prop, snap:snapOf(), photo:(typeof snapNow==='function'?snapNow('happy'):null)});
-  const keep = {hall:S.hall, coins:S.coins, owned:S.owned, worn:S.worn, pos:S.pos, chess:S.chess, ttt:S.ttt, snd:S.snd, farm:S.farm, dishes:S.dishes, recipes:S.recipes, photos:S.photos, phone:S.phone, pantry:S.pantry};
+  const keep = {hall:S.hall, coins:S.coins, owned:S.owned, worn:S.worn, pos:S.pos, chess:S.chess, ttt:S.ttt, snd:S.snd, farm:S.farm, dishes:S.dishes, recipes:S.recipes, photos:S.photos, phone:S.phone, pantry:S.pantry, bananas:S.bananas};
   S = Object.assign(fresh(), keep);
   S.born = Date.now();
   lastPetHTML = ''; save(); render();
