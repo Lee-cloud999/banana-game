@@ -497,6 +497,14 @@ html,body{overscroll-behavior-y:contain}
 #tboard{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));touch-action:manipulation;contain:size layout}
 #tboard .tc{min-width:0;min-height:0;overflow:hidden;position:relative}
 #tboard .tc svg,#tboard .tc img{width:70%;height:70%;max-width:70%;max-height:70%;display:block;flex:none}
+/* 업데이트 공지 */
+#notice{position:fixed;inset:0;z-index:30;background:rgba(90,58,18,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+#notice .nbox{background:#fffdf2;border:3px solid #8a4b12;border-radius:22px;width:100%;max-width:360px;padding:18px 16px 14px;color:#5a3a12;box-shadow:0 8px 0 rgba(138,75,18,.25)}
+#notice h2{margin:0 0 10px;text-align:center;font-size:18px}
+#notice ul{margin:0 0 14px;padding:0 0 0 18px;display:grid;gap:7px;font-size:14.5px;font-weight:600;line-height:1.45}
+#notice .nbtns{display:grid;grid-template-columns:1.3fr 1fr;gap:8px}
+#notice .nbtns button{padding:11px 4px;font-size:14px;border-radius:12px}
+#notice .nclose{background:#ffd84a}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -2877,6 +2885,38 @@ function renderGacha(g){
   };
   $('shopcoins').textContent = S.coins;
 }
+/* ===== 업데이트 공지 (게임을 켤 때 최신 공지 하나만 팝업) ===== */
+// 새 업데이트가 있으면 id를 새 값으로 바꾸고 내용을 고쳐 주세요. id가 바뀌면 "오늘 하루 보지 않기"를 눌렀어도 다시 떠요.
+const NOTICE = {
+  id: '2026-10-04',
+  title: '10월 4일 업데이트',
+  lines: [
+    '산책이 점프 게임으로! 화면을 톡 눌러 장애물을 피하고 코인과 요리 재료를 모아요',
+    '유료 먹이 5종 추가: 샌드위치, 푸딩, 피자, 햄버거, 케이크',
+    '허기짐이 초록색이 되면 "배부름"으로 바뀌어요',
+    '꾸미기 미리보기와 뽑기 아이템 15종 추가',
+    '체스와 틱택토 보상이 늘었고, 도감에 착용 사진이 떠요'
+  ]
+};
+const NOTICE_KEY = 'banana-notice-hide';
+function noticeHidden(){ try{ return localStorage.getItem(NOTICE_KEY) === NOTICE.id; }catch(e){ return false; } }
+function noticeHide(){ try{ localStorage.setItem(NOTICE_KEY, NOTICE.id); }catch(e){} }
+function showNotice(tries){
+  if(typeof document === 'undefined' || !document.body || !document.body.appendChild || noticeHidden()) return;
+  const md = $('modal');
+  if(md && !md.hidden && (tries||0) < 60) return setTimeout(()=>showNotice((tries||0)+1), 1000);   // 이름 입력 등이 끝난 뒤에
+  const box = document.createElement('div'); box.id = 'notice';
+  const li = NOTICE.lines.map(t=>`<li>${t}</li>`).join('');
+  box.innerHTML = `<div class="nbox"><h2>${NOTICE.title}</h2><ul>${li}</ul><div class="nbtns"><button data-n="hide">오늘 하루 보지 않기</button><button data-n="close" class="nclose">닫기</button></div></div>`;
+  box.onclick = e=>{
+    const b = e.target && e.target.closest ? e.target.closest('[data-n]') : null;
+    if(!b && e.target !== box) return;
+    if(b && b.dataset.n === 'hide') noticeHide();
+    box.remove();
+  };
+  document.body.appendChild(box);
+}
+if(typeof setTimeout === 'function') setTimeout(showNotice, 500);
 
 /* ==== /WALK-CHESS-JS ==== */
 
