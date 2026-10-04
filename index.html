@@ -123,6 +123,7 @@
 #wscore{position:absolute;right:10px;top:8px;z-index:4;background:rgba(255,253,242,.9);border:2px solid #e6c84a;border-radius:99px;padding:3px 12px;font-weight:800;font-size:14px;color:#8a4b12}
 #whint{position:absolute;left:0;right:0;top:56px;text-align:center;z-index:4;font-weight:800;font-size:15px;color:#8a4b12;text-shadow:0 1px 0 #fff;transition:opacity .6s}
 #stage.wjump #pet .pw{animation:none}
+#whint{display:none}
 /* ---- 컴팩트 레이아웃 (모바일에서 한 화면에) ---- */
 :root{--sh:min(300px,29vh)}
 @supports (height:100dvh){:root{--sh:min(300px,29dvh)}}
@@ -1360,7 +1361,7 @@ function startWalk(){
   void bar.offsetWidth;
   bar.style.transition = `width ${WALK_MS}ms linear`; bar.style.width = '100%';
   setFace('happy', WALK_MS+300);
-  say('산책 나가요! 톡 눌러서 점프!', 2500);
+  say('산책 나가요! 화면을 톡 눌러서 점프해요', 3500);
   render();
   wgStart();
   walkTimers.push(setTimeout(endWalk, WALK_MS));
