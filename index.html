@@ -713,17 +713,17 @@ function wake(msg){ S.sleeping=false; say(msg||'일어났어요!'); render(); }
 /* ===== 행동 ===== */
 let busy = false;
 const FOODS = [
-  {id:'food_banana',n:'바나나',hunger:25,mood:4, exp:3,say:'냠냠! 바나나 맛있다'},
-  {id:'food_apple',n:'사과',  hunger:20,mood:6, exp:3,say:'아삭아삭! 사과다'},
+  {id:'food_banana',n:'바나나',hunger:20,mood:4, exp:3,say:'냠냠! 바나나 맛있다'},
+  {id:'food_apple',n:'사과',  hunger:18,mood:6, exp:3,say:'아삭아삭! 사과다'},
   {id:'food_strawberry',n:'딸기',  hunger:12,mood:10,exp:2,say:'새콤달콤 딸기'},
-  {id:'food_rice',n:'주먹밥',hunger:40,mood:0, exp:4,say:'든든해요!'},
-  {id:'food_cookie',n:'쿠키',  hunger:10,mood:18,exp:2,say:'바삭바삭 쿠키'},
-  {id:'food_icecream',n:'아이스크림',hunger:8,mood:22,exp:2,say:'차가워! 달콤해!'},
-  {id:'food_sandwich',n:'샌드위치',hunger:35,mood:10,exp:6,price:30,say:'샌드위치 최고!'},
-  {id:'food_pudding',n:'푸딩',hunger:18,mood:30,exp:7,price:40,say:'말랑말랑 푸딩!'},
-  {id:'food_pizza',n:'피자',hunger:40,mood:16,exp:8,price:45,say:'치즈가 쭉~ 늘어나요'},
-  {id:'food_burger',n:'햄버거',hunger:50,mood:12,exp:10,price:55,say:'우와 큰 햄버거!'},
-  {id:'food_cake',n:'케이크',hunger:30,mood:40,exp:14,price:80,say:'생일 같아요! 행복해요'}
+  {id:'food_rice',n:'주먹밥',hunger:30,mood:0, exp:4,say:'든든해요!'},
+  {id:'food_cookie',n:'쿠키',  hunger:10,mood:16,exp:2,say:'바삭바삭 쿠키'},
+  {id:'food_icecream',n:'아이스크림',hunger:8,mood:20,exp:2,say:'차가워! 달콤해!'},
+  {id:'food_sandwich',n:'샌드위치',hunger:45,mood:14,exp:6,price:30,say:'샌드위치 최고!'},
+  {id:'food_pudding',n:'푸딩',hunger:25,mood:40,exp:8,price:40,say:'말랑말랑 푸딩!'},
+  {id:'food_pizza',n:'피자',hunger:60,mood:22,exp:10,price:50,say:'치즈가 쭉~ 늘어나요'},
+  {id:'food_burger',n:'햄버거',hunger:75,mood:20,exp:12,price:65,say:'우와 큰 햄버거!'},
+  {id:'food_cake',n:'케이크',hunger:45,mood:55,exp:16,price:90,say:'생일 같아요! 행복해요'}
 ];
 const grid = $('fgrid');
 FOODS.forEach((f,i)=>{
