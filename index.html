@@ -508,6 +508,8 @@ html,body{overscroll-behavior-y:contain}
 /* 뽑기 결과 이미지 크기 */
 .gcard .e{display:block;width:56px;height:56px}
 .gcard .e img,.gcard .e svg{width:100%;height:100%;object-fit:contain;display:block}
+#editbar{grid-template-columns:repeat(4,1fr)}
+#editrl,#editrr{background:#e6dcff}
 </style>
 <style>
   #app{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom))}
@@ -583,7 +585,7 @@ html,body{overscroll-behavior-y:contain}
 <div id="school" hidden><div class="chwrap"><div class="chhead"><div class="t" style="flex:1;font-size:19px">학교</div></div><div id="scbody"></div><div class="chbtns" style="grid-template-columns:1fr"><button id="scexit">나가기</button></div></div></div>
 <div id="cook" hidden><div class="fxfull" id="ckfx"></div><div class="chwrap"><div class="chhead"><div class="t" style="flex:1;font-size:19px">요리하기</div><div class="chs" id="ckt"></div></div><div class="cktabs" id="cktabs"><button data-t="cook" class="on">요리하기</button><button data-t="dish">내 요리</button><button data-t="book">레시피 도감</button></div><div id="ckbody"></div><div class="chbtns" style="grid-template-columns:1fr"><button id="ckexit">나가기</button></div></div></div>
 <div id="foods" hidden><div class="fbox"><p>무엇을 먹일까요?</p><div class="fgrid" id="fgrid"></div><button id="fclose" class="fclose">닫기</button></div></div>
-<div id="editbar" hidden><button id="editsmall">작게</button><button id="editbig">크게</button><button id="editreset">처음</button><button id="editcancel">취소</button><button id="editsave">저장</button></div>
+<div id="editbar" hidden><button id="editsmall">작게</button><button id="editbig">크게</button><button id="editrl">↺ 5°</button><button id="editrr">↻ 5°</button><button id="editreset">처음</button><button id="editcancel">취소</button><button id="editsave">저장</button></div>
 <div id="hall" hidden><div class="fbox"><p>바나나 도감</p><div id="halllist"></div><button id="hallnew" class="hn" hidden>새 바나나 키우기</button><button id="hallclose" class="fclose">닫기</button></div></div>
 <div id="modal" hidden><div class="mbox"><p id="mtext"></p><input id="minput" maxlength="8" autocomplete="off"><div class="mbtns"><button id="mok">확인</button><button id="mcancel">취소</button></div></div></div>
 <script>
@@ -922,8 +924,8 @@ function decorHTML(){
     const it = S.worn && ITEM_BY_ID[S.worn[slot]];
     if(!it) return '';
     const d = ICONS[it.id];
-    if(d.img) return `<img class="dc${editing?' edit':''}" data-id="${it.id}" src="${d.img}" alt="" draggable="false" style="${dpos(it)};width:${dw(it)}%;transform:translate(-50%,-50%) rotate(${it.r}deg)">`;
-    return `<svg class="dc${editing?' edit':''}" data-id="${it.id}" viewBox="${d.vb}" aria-hidden="true" style="${dpos(it)};width:${dw(it)}%;transform:translate(-50%,-50%) rotate(${it.r}deg)"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
+    if(d.img) return `<img class="dc${editing?' edit':''}" data-id="${it.id}" src="${d.img}" alt="" draggable="false" style="${dpos(it)};width:${dw(it)}%;transform:translate(-50%,-50%) rotate(${it.r + (dget(it).a||0)}deg)">`;
+    return `<svg class="dc${editing?' edit':''}" data-id="${it.id}" viewBox="${d.vb}" aria-hidden="true" style="${dpos(it)};width:${dw(it)}%;transform:translate(-50%,-50%) rotate(${it.r + (dget(it).a||0)}deg)"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
   }).join('');
 }
 function addCoins(n){ S.coins = (S.coins||0) + n; float('+'+n+' '+icon('coin'),true); }
@@ -1875,7 +1877,7 @@ $('tgames').onclick = e=>{ if(e.target===$('tgames')) $('tgames').hidden = true;
 let editing = false, draft = {}, drag = null, selId = null;
 const ptrs = new Map();
 const S_MIN = 0.4, S_MAX = 3;
-function dget(it){ return (editing && draft[it.id]) || (S.pos && S.pos[it.id]) || {dx:0, dy:0, s:1}; }
+function dget(it){ return (editing && draft[it.id]) || (S.pos && S.pos[it.id]) || {dx:0, dy:0, s:1, a:0}; }
 function dpos(it){ const o = dget(it); return `left:${it.x + o.dx}%;top:${it.y + o.dy}%`; }
 function dw(it){ const o = dget(it); return Math.round(it.w * (o.s || 1) * 100) / 100; }
 function markSel(){
@@ -1893,11 +1895,11 @@ function startEdit(){
   const its = ['prop','acc','hat'].map(s=>ITEM_BY_ID[S.worn[s]]).filter(Boolean);
   if(!its.length){ shopMsg('먼저 모자나 목 아이템을 착용해 주세요'); return; }
   draft = {};
-  its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0, s:(o&&o.s)||1}; });
+  its.forEach(it=>{ const o = S.pos && S.pos[it.id]; draft[it.id] = {dx:o?o.dx:0, dy:o?o.dy:0, s:(o&&o.s)||1, a:(o&&o.a)||0}; });
   selId = (S.worn.hat && draft[S.worn.hat]) ? S.worn.hat : its[0].id;
   editing = true; busy = true; document.body.classList.add('editing'); ptrs.clear(); drag = null;
   $('shop').hidden = true; $('editbar').hidden = false;
-  lastPetHTML = ''; render(); markSel(); say('끌어서 옮기고, 크기는 작게·크게 버튼으로 바꿔요', 6000);
+  lastPetHTML = ''; render(); markSel(); say('끌어서 옮기고, 크기와 각도(5도씩)는 버튼으로 바꿔요', 6000);
 }
 function endEdit(){
   editing = false; busy = false; document.body.classList.remove('editing'); draft = {}; drag = null; ptrs.clear();
@@ -1907,16 +1909,26 @@ $('posbtn').onclick = startEdit;
 $('editsave').onclick = ()=>{
   if(!S.pos) S.pos = {};
   for(const id in draft){
-    const dx = Math.round(draft[id].dx*10)/10, dy = Math.round(draft[id].dy*10)/10, s = Math.round(draft[id].s*100)/100;
-    if(dx===0 && dy===0 && s===1) delete S.pos[id]; else S.pos[id] = {dx, dy, s};
+    const dx = Math.round(draft[id].dx*10)/10, dy = Math.round(draft[id].dy*10)/10, s = Math.round(draft[id].s*100)/100, a = Math.round((draft[id].a||0)/5)*5;
+    if(dx===0 && dy===0 && s===1 && a===0) delete S.pos[id]; else S.pos[id] = {dx, dy, s, a};
   }
   save(); endEdit(); setFace('happy',1500); say('저장했어요', 2500);
 };
 $('editcancel').onclick = ()=>{ endEdit(); say('저장하지 않았어요', 2000); };
 $('editreset').onclick = ()=>{
-  for(const id in draft) draft[id] = {dx:0, dy:0, s:1};
+  for(const id in draft) draft[id] = {dx:0, dy:0, s:1, a:0};
   lastPetHTML = ''; render(); markSel();
 };
+function setAngle(id, a){
+  const it = ITEM_BY_ID[id]; if(!it || !draft[id]) return;
+  a = Math.round(a/5)*5; if(a > 180) a -= 360; if(a < -180) a += 360;
+  draft[id].a = a;
+  const el = $('pet').querySelector(`.dc[data-id="${id}"]`);
+  if(el) el.style.transform = `translate(-50%,-50%) rotate(${it.r + a}deg)`;
+  say(`각도 ${a > 0 ? '+' : ''}${a}도`, 1200);
+}
+$('editrl').onclick = ()=>{ if(selId && draft[selId]) setAngle(selId, (draft[selId].a||0) - 5); };
+$('editrr').onclick = ()=>{ if(selId && draft[selId]) setAngle(selId, (draft[selId].a||0) + 5); };
 $('editsmall').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s/1.12); };
 $('editbig').onclick = ()=>{ if(selId && draft[selId]) setScale(selId, draft[selId].s*1.12); };
 $('stage').onpointerdown = e=>{
@@ -2161,7 +2173,7 @@ function decorSnap(worn, pos){
   return ['prop','acc','hat'].map(slot=>{
     const it = worn && ITEM_BY_ID[worn[slot]]; if(!it) return '';
     const d = ICONS[it.id], o = (pos && pos[it.id]) || {dx:0,dy:0,s:1};
-    const st = `left:${it.x+o.dx}%;top:${it.y+o.dy}%;width:${Math.round(it.w*(o.s||1)*100)/100}%;transform:translate(-50%,-50%) rotate(${it.r}deg)`;
+    const st = `left:${it.x+o.dx}%;top:${it.y+o.dy}%;width:${Math.round(it.w*(o.s||1)*100)/100}%;transform:translate(-50%,-50%) rotate(${it.r+(o.a||0)}deg)`;
     if(d.img) return `<img class="dc" src="${d.img}" alt="" draggable="false" style="${st}">`;
     return `<svg class="dc" viewBox="${d.vb}" aria-hidden="true" style="${st}"><g stroke="#8a4b12" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${d.body}</g></svg>`;
   }).join('');
