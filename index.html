@@ -1241,15 +1241,9 @@ const WALK_MS = 20000;
 const GROUND_PX_PER_SEC = 160;       // 길바닥이 흘러가는 속도 (CSS 애니메이션과 같아야 해요)
 let walking = false, walkTimers = [], walkEnd = 0, walkCoins = 0;
 
-const WALK_FINDS = [
-  {id:'hat_flower',  w:35, msg:'예쁜 꽃을 발견했어요!',   apply(){ S.mood = clamp(S.mood+6); }},
-  {id:'acc_sparkle', w:30, msg:'반짝이는 별을 주웠어요!', apply(){ gain(3); }},
-  {id:'food_apple',  w:35, msg:'사과를 주워 먹었어요!',   apply(){ S.hunger = clamp(S.hunger+8); }}
-];
-function pickFind(){
-  let r = Math.random()*100;
-  for(const f of WALK_FINDS){ if((r-=f.w) < 0) return f; }
-  return WALK_FINDS[0];
+function pickFind(){                       // 길에서 요리 재료를 랜덤으로 주워요
+  const i = Math.floor(Math.random()*ING.length), g = ING[i];
+  return {id:g.id, msg:`${g.n} 재료를 주웠어요!`, apply(){ if(typeof fmState === 'function') fmState(); if(S.farm){ if(!S.farm.inv) S.farm.inv = {}; S.farm.inv[i] = (S.farm.inv[i]||0) + 1; } gain(1); }};
 }
 
 /* ---- 점프 게임: 화면을 톡 눌러 점프! 장애물은 피하고 코인은 모아요 ---- */
@@ -1281,7 +1275,7 @@ function wgSpawn(){
     [[-44,72],[0,100],[44,72]].forEach(([dx,hg])=> wgAdd('coin','coin',26,26,hg, x0 + ob.w/2 - 13 + dx));
   }
   else if(r < .80){ for(let i=0;i<3;i++) wgAdd('coin','coin',26,26,6, x0 + i*38); }          // 땅 코인 줄
-  else if(r < .93){ for(let i=0;i<3;i++) wgAdd('coin','coin',26,26,100, x0 + i*38); }        // 공중 코인 줄
+  else if(r < .90){ for(let i=0;i<3;i++) wgAdd('coin','coin',26,26,100, x0 + i*38); }        // 공중 코인 줄
   else { const f = pickFind(); wgAdd('item', f.id, 32, 32, 6, x0); wgEnts[wgEnts.length-1].f = f; }
 }
 function wgHit(en){
@@ -1358,7 +1352,7 @@ function startWalk(){
   if(S.sleeping) return say('쿨쿨... 자는 중이에요');
   if(S.energy < 20){ setFace('sleepy',1800); return say('너무 졸려서 산책은 힘들어요...'); }
   if(S.hunger < 20){ setFace('sad',1800); return say('배고파서 걸을 힘이 없어요...'); }
-  if(S.inRoom){ S.inRoom = false; if(typeof roomUpd === 'function') roomUpd(); }
+  if(S.inRoom){ setFace('normal',1500); return say('방 안에서는 산책할 수 없어요. 먼저 밖으로 나가요!', 2600); }
   busy = true; walking = true; walkCoins = 0; walkEnd = Date.now() + WALK_MS;
   $('walk').hidden = false;
   const bar = $('walkbar');
